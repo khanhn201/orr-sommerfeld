@@ -48,11 +48,11 @@ Kuu0 = -R*Dh'*Dh'*Bh*Dh*Dh*R'...
        -2*alpha^2*R*Dh'*Bh*Dh*R'...
        -alpha^4*R*Bh*R';
 KuuU = -1i*alpha*Re*(alpha^2*R*Bh*diag(U)*R'...
-                +R*Dh'*Bh*diag(U)*Dh*R'
+                +R*Dh'*Bh*diag(U)*Dh*R'...
                 -R*Dh'*Bh*diag(DU)*R');
 KuuS = -alpha^2*(R*Dh'*Sh*R'+R*Sh*Dh*R');
 Kuu = Kuu0 + KuuU + KuuS;
-Kua = -alpha^2*(Ga/Re*alpha^2/Ca*alpha^2-2i*alpha*DU(end))*R*S...
+Kua = -alpha^2*(Ga/Re + alpha^2/Ca*alpha^2-2i*alpha*DU(end))*R*S...
       +1i*alpha*D2U(end)*R*Dh'*S;
 Kau = S'*R';
 Kaa = -1i*alpha*DU(end);
@@ -68,8 +68,7 @@ M = [
   zeros(1, N), Maa;
 ];
 
-[vecs, gamma] = eig(K, M);
-gamma = diag(gamma);
+[vecs, gamma] = eig(K, M, 'vector');
 gamma = gamma*1i/alpha;
 figure;
 plot(real(gamma), imag(gamma), 'ok', 'linewidth', 2);
@@ -81,14 +80,15 @@ grid on;
 axis equal;
 
 figure;
-unstable = find(real(gamma) > 1);
-plot(R'*vecs(1:end-1, unstable), x)
+unstable = find(imag(gamma) > -0.01);
+plot(abs(R'*vecs(1:end-1, unstable)), x, 'linewidth', 2)
 labels = arrayfun(@(g) sprintf('gamma = %.2f + %.2fi, a =  %.2f + %.2fi', 
                                 real(gamma(g)), 
                                 imag(gamma(g)), 
                                 real(vecs(end, g)),
                                 imag(vecs(end, g)) ), unstable, 'UniformOutput', false);
-xlabel('V(y)');
+xlabel('mag(V(y))');
 ylabel('y');
 legend(labels);
+gamma(unstable)
 

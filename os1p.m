@@ -1,5 +1,5 @@
 clear all; close all;
-N = 500;
+N = 100;
 
 Re = 3.e4;
 % Pg = 1.1e-4;
@@ -52,10 +52,10 @@ KuuU = -1i*alpha*Re*(alpha^2*R*Bh*diag(U)*R'...
                 -R*Dh'*Bh*diag(DU)*R');
 KuuS = -alpha^2*(R*Dh'*Sh*R'+R*Sh*Dh*R');
 Kuu = Kuu0 + KuuU + KuuS;
-Kua = -alpha^2*(Ga/Re + alpha^2/Ca*alpha^2-2i*alpha*DU(end))*R*S...
-      +1i*alpha*D2U(end)*R*Dh'*S;
+Kua = -alpha^2*(Ga/Re + alpha^2/Ca*alpha^2-2i*alpha*S'*DU)*R*S...
+      +1i*alpha*S'*D2U*R*Dh'*S;
 Kau = S'*R';
-Kaa = -1i*alpha*DU(end);
+Kaa = -1i*alpha*S'*DU;
 Muu = Re*(R*Dh'*Bh*Dh*R' + alpha^2*R*Bh*R');
 Maa = 1;
 
@@ -67,11 +67,17 @@ M = [
   Muu, zeros(N, 1);
   zeros(1, N), Maa;
 ];
+dlmwrite('K_real.txt', real(K), 'delimiter', '\t', 'precision', 32);
+dlmwrite('K_imag.txt', imag(K), 'delimiter', '\t', 'precision', 32);
+dlmwrite('M_real.txt', real(M), 'delimiter', '\t', 'precision', 32);
+dlmwrite('M_imag.txt', imag(M), 'delimiter', '\t', 'precision', 32);
+
+
 
 [vecs, gamma] = eig(K, M, 'vector');
-gamma = gamma*1i/alpha;
+c = gamma*1i/alpha;
 figure;
-plot(real(gamma), imag(gamma), 'ok', 'linewidth', 2);
+plot(real(c), imag(c), 'ok', 'linewidth', 2);
 xlabel('Re(c)');
 ylabel('Im(c)');
 xlim([-0.2, 1.8]);
@@ -80,7 +86,7 @@ grid on;
 axis equal;
 
 figure;
-unstable = find(imag(gamma) > -0.01);
+unstable = find(imag(c) > -0.01);
 plot(abs(R'*vecs(1:end-1, unstable)), x, 'linewidth', 2)
 labels = arrayfun(@(g) sprintf('gamma = %.2f + %.2fi, a =  %.2f + %.2fi', 
                                 real(gamma(g)), 
@@ -92,3 +98,7 @@ ylabel('y');
 legend(labels);
 gamma(unstable)
 
+N
+res = norm(K*vecs-M*vecs*diag(gamma))
+condK = cond(K)
+condM = cond(M)

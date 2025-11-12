@@ -54,7 +54,7 @@ for e = 1:Nelem
     Kuu = Kuu0 + KuuU + KuuS;
     Muu = Re*(Dh'*Bh*Dh + alpha^2*Bh);
 
-    Kua = -alpha^2*(Ga/Re + alpha^2/Ca*alpha^2-2i*alpha*S'*DU)*S...
+    Kua = -alpha^2*S*(Ga/Re + alpha^2/Ca - 2i*alpha*S'*DU)...
           +1i*alpha*S'*D2U*Dh'*S;
     Kau = S';
     Kaa = -1i*alpha*S'*U;

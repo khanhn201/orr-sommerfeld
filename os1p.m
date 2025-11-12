@@ -1,5 +1,5 @@
 clear all; close all;
-N = 100;
+N = 500;
 
 Re = 3.e4;
 % Pg = 1.1e-4;
@@ -55,7 +55,7 @@ Kuu = Kuu0 + KuuU + KuuS;
 Kua = -alpha^2*(Ga/Re + alpha^2/Ca*alpha^2-2i*alpha*S'*DU)*R*S...
       +1i*alpha*S'*D2U*R*Dh'*S;
 Kau = S'*R';
-Kaa = -1i*alpha*S'*DU;
+Kaa = -1i*alpha*S'*U;
 Muu = Re*(R*Dh'*Bh*Dh*R' + alpha^2*R*Bh*R');
 Maa = 1;
 

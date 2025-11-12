@@ -1,6 +1,6 @@
 clear all; close all;
-N = 100;
-Nelem = 1;
+N = 10;
+Nelem = 10;
 
 Re = 3.e4;
 alpha = 1.0;
@@ -57,7 +57,7 @@ for e = 1:Nelem
     Kua = -alpha^2*(Ga/Re + alpha^2/Ca*alpha^2-2i*alpha*S'*DU)*S...
           +1i*alpha*S'*D2U*Dh'*S;
     Kau = S';
-    Kaa = -1i*alpha*S'*DU;
+    Kaa = -1i*alpha*S'*U;
 
     Kuu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Kuu;
     Muu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Muu;

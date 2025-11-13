@@ -1,8 +1,8 @@
 clear all; close all;
-N = 50;
+N = 100;
 
-rhos = [3000, 3000];
-mus = [1e-1, 1e-1];
+rhos = [3000, 1.2];
+mus = [1e-1, 1e-3];
 sigmas = 0.06;
 sigmas = mus(1)/0.07;
 g = 9.81;
@@ -119,4 +119,8 @@ xlabel('mag(V(y))');
 ylabel('y');
 legend(labels);
 
-gamma(unstable)
+c(unstable)
+N
+res = norm(K*vecs-M*vecs*diag(gamma))
+condK = cond(K)
+condM = cond(M)

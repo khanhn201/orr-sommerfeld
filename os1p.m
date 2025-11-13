@@ -1,16 +1,17 @@
 clear all; close all;
-N = 4;
+N = 200;
 
 Re = 3.e4;
+alpha = 1.0;
+Ca = 0.07;
+Ga = 8.3e7;
+
 % Pg = 1.1e-4;
 % rho = 1.0;
 % mu = 1./Re;
-alpha = 1.0;
 % g = (Re*Pg)^(-2);
 % sigma = 0.011269332539972
 
-Ca = 0.07;
-Ga = 8.3e7;
 
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 x = (z-1.0)/2.0;
@@ -53,7 +54,7 @@ KuuU = -1i*alpha*Re*(alpha^2*R*Bh*diag(U)*R'...
 KuuS = -alpha^2*(R*Dh'*Sh*R'+R*Sh*Dh*R');
 Kuu = Kuu0 + KuuU + KuuS;
 Kua = -alpha^2*R*S*(Ga/Re + alpha^2/Ca - 2i*alpha*S'*DU)...
-      +1i*alpha*S'*D2U*R*Dh'*S;
+      +1i*alpha*R*Dh'*Sh*D2U;
 Kau = S'*R';
 Kaa = -1i*alpha*S'*U;
 Muu = Re*(R*Dh'*Bh*Dh*R' + alpha^2*R*Bh*R');
@@ -70,9 +71,12 @@ M = [
 
 
 
-% [vecs, gamma] = eig(K, M, 'vector');
-[vecs, gamma] = eigs(K, M, 5,'lr');
-gamma = diag(gamma);
+save -mat -v7 "KM.mat" K M
+
+
+
+[vecs, gamma] = eig(K, M, 'vector');
+
 c = gamma*1i/alpha;
 figure;
 plot(real(c), imag(c), 'ok', 'linewidth', 2);
@@ -99,6 +103,6 @@ legend(labels);
 c(unstable)
 
 N
-% res = norm(K*vecs-M*vecs*diag(gamma))
+res = norm(K*vecs-M*vecs*diag(gamma))
 condK = cond(K)
 condM = cond(M)

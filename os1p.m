@@ -1,4 +1,4 @@
-clear all; close all;
+% clear all; close all;
 N = 200;
 
 Re = 3.e4;

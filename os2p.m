@@ -1,8 +1,8 @@
 clear all; close all;
-N = 100;
+N = 70;
 
-rhos = [3000, 1.2];
-mus = [1e-1, 1e-3];
+rhos = [1, 1e-3];
+mus = [0.5e-6, 0.5e-6];
 sigmas = 0.06;
 sigmas = mus(1)/0.07;
 g = 9.81;
@@ -33,17 +33,21 @@ for e = 1:Nelem
 end
 
 xs = [];
+Uxplot = [];
+Uplot = [];
 for e = 1:Nelem
     rho = rhos(e);
     mu = mus(e);
 
     x = -1.0 + 2.0*e/Nelem + (z-1.0)/Nelem;
-    xs = [xs, x'];
+    xs = [xs; x'];
     if e == 1
         U = 1.0 + (1-f/2*rho/mu)*x - (f/2*rho/mu)*x.^2;
     else
         U = 1.0 + (mus(1)/mu - f/2*rhos(1)/mu)*x - (f/2*rho/mu)*x.^2;
     end
+    Uxplot = [Uxplot;x];
+    Uplot = [Uplot;U];
     DU = Dh * U;
     D2U = Dh * DU;
 
@@ -77,6 +81,8 @@ for e = 1:Nelem
     Kau_block(1,(e-1)*(N+1)+1:e*(N+1)) =  Kau;
     Kua_block((e-1)*(N+1)+1:e*(N+1),1) =  Kua;
 end
+figure;
+plot(Uplot, Uxplot, 'linewidth', 2);
 
 
 Ih = speye(Ng); 
@@ -107,17 +113,17 @@ ylim([-1, 0.2]);
 grid on;
 axis equal;
 
-figure;
+
 unstable = find(imag(c) > 0.0);
-plot(abs(R'*vecs(1:end-1, unstable)), Q'*xs', 'linewidth', 2)
-labels = arrayfun(@(g) sprintf('c = %.2f + %.2fi, a =  %.2f + %.2fi', 
-                                real(c(g)), 
-                                imag(c(g)), 
-                                real(vecs(end, g)),
-                                imag(vecs(end, g)) ), unstable, 'UniformOutput', false);
-xlabel('mag(V(y))');
-ylabel('y');
-legend(labels);
+figure;
+v = Q*R'*vecs(1:end-1, unstable);
+v = reshape(v, [nh , 2]);
+u = alpha*1i*Dh*v;
+plot(abs(v), xs', 'linewidth', 2)
+title('V')
+figure;
+plot(abs(u), xs', 'linewidth', 2);
+title('U')
 
 c(unstable)
 N

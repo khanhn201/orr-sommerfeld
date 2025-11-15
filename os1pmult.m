@@ -1,8 +1,8 @@
 % clear all; close all;
 clear all;
 % N = 250;
-N = 100;
-Nelem = 2;
+N = 20;
+Nelem = 20;
 
 Re = 3.e4;
 alpha = 1.0;
@@ -13,10 +13,10 @@ Ga = 8.3e7;
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 
 nh = N + 1;
-Ng = Nelem * N + 1;  % total global nodes
+Ng = Nelem * (N-1) + 2;  % total global nodes
 Q = sparse([], [], [], Nelem*nh, Ng, 2*Ng);
 for e = 1:Nelem
-    gidx = (e-1)*N + (1:nh);
+    gidx = (e-1)*(nh-2) + (1:nh);
     Q((e-1)*nh + (1:nh), gidx) = speye(nh);
 end
 
@@ -29,7 +29,11 @@ nh = N+1;
 
 xs = [];
 
-
+T = speye(nh);
+T(2, :) = Dh(1,:);
+T(end-1, :) = speye(nh)(end, :);
+T(end, :) = Dh(end,:);
+T = inv(T);
 for e = 1:Nelem
     x = -1.0 + e/Nelem + (z-1.0)/2.0/Nelem;
     xs = [xs, x'];
@@ -72,15 +76,16 @@ for e = 1:Nelem
         Kuu += -alpha^2*Sh*Dh;
     end
 
-    Kuu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Kuu;
-    Muu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Muu;
-    Kau_block(1,(e-1)*(N+1)+1:e*(N+1)) =  Kau;
-    Kua_block((e-1)*(N+1)+1:e*(N+1),1) =  Kua;
+    Kuu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T'*Kuu*T;
+    Muu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T'*Muu*T;
+    Kau_block(1,(e-1)*(N+1)+1:e*(N+1)) =  Kau*T;
+    Kua_block((e-1)*(N+1)+1:e*(N+1),1) =  T'*Kua;
+    T_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T;
 end
 
 
 Ih = speye(Ng); 
-R=Ih(2:end,:);
+R=Ih(3:end,:);
 Kuu_global = R*Q'*Kuu_block*Q*R';
 Kua_global = R*Q'*Kua_block;
 Kau_global = Kau_block*Q*R';
@@ -101,7 +106,7 @@ M = [
 c = gamma*1i/alpha;
 figure;
 unstable = find(imag(c) > -0.01);
-plot(abs(R'*vecs(1:end-1, unstable)), Q'*xs', 'linewidth', 2)
+plot(abs(T_block*Q*R'*vecs(1:end-1, unstable)), xs', 'linewidth', 2)
 labels = arrayfun(@(g) sprintf('c = %.2f + %.2fi, a =  %.2f + %.2fi', 
                                 real(c(g)), 
                                 imag(c(g)), 
@@ -124,8 +129,8 @@ c(unstable)
 %
 % N
 res = norm(K*vecs-M*vecs*diag(gamma))
-% condK = cond(K)
-% condM = cond(M)
+condK = cond(K)
+condM = cond(M)
 Kuu_block = [];
 Kau_block = [];
 Kua_block = [];

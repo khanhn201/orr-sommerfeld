@@ -1,5 +1,5 @@
 % clear all; close all;
-N = 200;
+N = 150;
 
 Re = 3.e4;
 alpha = 1.0;
@@ -24,11 +24,18 @@ DU = Dh * U;
 D2U = Dh * DU;
 
 nh = N+1; Ih = speye(nh); 
-R=Ih(2:end,:);
+R=Ih(3:end,:);
 
 S = 0*(1:nh); S(end) = 1;
 Sh = diag(S);
 S = zeros(nh,1); S(end,1) = 1;
+
+T = speye(nh);
+T(2, :) = Dh(1,:);
+T(end-1, :) = speye(nh)(end, :);
+T(end, :) = Dh(end,:);
+T = inv(T);
+
 
 % Kuu0 = -mu/rho*R*Dh'*Dh'*Bh*Dh*Dh*R'...
 %        -mu/rho*2*alpha^2*R*Dh'*Bh*Dh*R'...
@@ -45,19 +52,19 @@ S = zeros(nh,1); S(end,1) = 1;
 % Muu = R*Dh'*Bh*Dh*R' + alpha^2*R*Bh*R';
 % Maa = 1;
 
-Kuu0 = -R*Dh'*Dh'*Bh*Dh*Dh*R'...
-       -2*alpha^2*R*Dh'*Bh*Dh*R'...
-       -alpha^4*R*Bh*R';
-KuuU = -1i*alpha*Re*(alpha^2*R*Bh*diag(U)*R'...
-                +R*Dh'*Bh*diag(U)*Dh*R'...
-                -R*Dh'*Bh*diag(DU)*R');
-KuuS = -alpha^2*(R*Dh'*Sh*R'+R*Sh*Dh*R');
+Kuu0 = -R*T'*Dh'*Dh'*Bh*Dh*Dh*T*R'...
+       -2*alpha^2*R*T'*Dh'*Bh*Dh*T*R'...
+       -alpha^4*R*T'*Bh*T*R';
+KuuU = -1i*alpha*Re*(alpha^2*R*T'*Bh*diag(U)*T*R'...
+                +R*T'*Dh'*Bh*diag(U)*Dh*T*R'...
+                -R*T'*Dh'*Bh*diag(DU)*T*R');
+KuuS = -alpha^2*(R*T'*Dh'*Sh*T*R' + R*T'*Sh*Dh*T*R');
 Kuu = Kuu0 + KuuU + KuuS;
-Kua = -alpha^2*R*S*(Ga/Re + alpha^2/Ca - 2i*alpha*S'*DU)...
-      +1i*alpha*R*Dh'*Sh*D2U;
-Kau = S'*R';
+Kua = -alpha^2*R*T'*S*(Ga/Re + alpha^2/Ca - 2i*alpha*S'*DU)...
+      +1i*alpha*R*T'*Dh'*Sh*D2U;
+Kau = S'*T*R';
 Kaa = -1i*alpha*S'*U;
-Muu = Re*(R*Dh'*Bh*Dh*R' + alpha^2*R*Bh*R');
+Muu = Re*(R*T'*Dh'*Bh*Dh*T*R' + alpha^2*R*T'*Bh*T*R');
 Maa = 1;
 
 K = [
@@ -65,8 +72,8 @@ K = [
   Kau, Kaa;
 ];
 M = [
-  Muu, zeros(N, 1);
-  zeros(1, N), Maa;
+  Muu, zeros(N-1, 1);
+  zeros(1, N-1), Maa;
 ];
 
 
@@ -91,14 +98,14 @@ axis equal;
 unstable = find(imag(c) > -0.00);
 
 figure;
-plot(abs(R'*vecs(1:end-1, unstable)), x, 'linewidth', 2)
+plot(abs(T*R'*vecs(1:end-1, unstable)), x, 'linewidth', 2)
 labels = arrayfun(@(g) sprintf('c = %.2f + %.2fi, a =  %.2f + %.2fi', 
                                 real(c(g)), 
                                 imag(c(g)), 
                                 real(vecs(end, g)),
                                 imag(vecs(end, g)) ), unstable, 'UniformOutput', false);
-xlabel('mag(V(y))');
-ylabel('y');
+figure;
+plot(abs(Dh*T*R'*vecs(1:end-1, unstable)), x, 'linewidth', 2)
 legend(labels);
 c(unstable)
 

@@ -1,8 +1,8 @@
 % clear all; close all;
 clear all;
 % N = 250;
-N = 20;
-Nelem = 20;
+N = 150;
+Nelem = 2;
 
 Re = 3.e4;
 alpha = 1.0;

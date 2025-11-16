@@ -1,8 +1,10 @@
 clear all; close all;
-N = 70;
+N = 200;
 
 rhos = [1, 1e-3];
-mus = [0.5e-6, 0.5e-6];
+mus = [0.3e-4, 0.3e-4];
+% rhos = [3000, 1.2];
+% mus = [1e-1, 1e-3];
 sigmas = 0.06;
 sigmas = mus(1)/0.07;
 g = 9.81;
@@ -25,12 +27,18 @@ Bh = Lx2*Bh;
 
 Nelem = 2;
 nh = N + 1;
-Ng = Nelem * N + 1;  % total global nodes
+Ng = Nelem * (N-1) + 2;  % total global nodes
 Q = sparse([], [], [], Nelem*nh, Ng, 2*Ng);
 for e = 1:Nelem
-    gidx = (e-1)*N + (1:nh);
+    gidx = (e-1)*(nh-2) + (1:nh);
     Q((e-1)*nh + (1:nh), gidx) = speye(nh);
 end
+
+T = speye(nh);
+T(2, :) = Dh(1,:);
+T(end-1, :) = speye(nh)(end, :);
+T(end, :) = Dh(end,:);
+T = inv(T);
 
 xs = [];
 Uxplot = [];
@@ -76,17 +84,18 @@ for e = 1:Nelem
 
     Muu = rho*(Dh'*Bh*Dh + alpha^2*Bh);
 
-    Kuu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Kuu;
-    Muu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Muu;
-    Kau_block(1,(e-1)*(N+1)+1:e*(N+1)) =  Kau;
-    Kua_block((e-1)*(N+1)+1:e*(N+1),1) =  Kua;
+    Kuu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T'*Kuu*T;
+    Muu_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T'*Muu*T;
+    Kau_block(1,(e-1)*(N+1)+1:e*(N+1)) =  Kau*T;
+    Kua_block((e-1)*(N+1)+1:e*(N+1),1) =  T'*Kua;
+    T_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T;
 end
 figure;
 plot(Uplot, Uxplot, 'linewidth', 2);
 
 
 Ih = speye(Ng); 
-R=Ih(2:end,:);
+R=Ih(3:end,:);
 Kuu_global = R*Q'*Kuu_block*Q*R';
 Kua_global = R*Q'*Kua_block;
 Kau_global = Kau_block*Q*R';
@@ -116,8 +125,8 @@ axis equal;
 
 unstable = find(imag(c) > 0.0);
 figure;
-v = Q*R'*vecs(1:end-1, unstable);
-v = reshape(v, [nh , 2]);
+v = T_block*Q*R'*vecs(1:end-1, unstable);
+v = reshape(v, [nh, 2]);
 u = alpha*1i*Dh*v;
 plot(abs(v), xs', 'linewidth', 2)
 title('V')

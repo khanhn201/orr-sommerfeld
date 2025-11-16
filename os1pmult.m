@@ -1,7 +1,7 @@
 % clear all; close all;
 clear all;
 % N = 250;
-N = 150;
+N = 70;
 Nelem = 2;
 
 Re = 3.e4;

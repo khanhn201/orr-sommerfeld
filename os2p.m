@@ -1,8 +1,8 @@
 clear all; close all;
-N = 200;
+N = 250;
 
 rhos = [1, 1e-3];
-mus = [0.3e-4, 0.3e-4];
+mus = [0.1e-4, 0.1e-4];
 % rhos = [3000, 1.2];
 % mus = [1e-1, 1e-3];
 sigmas = 0.06;
@@ -95,7 +95,8 @@ plot(Uplot, Uxplot, 'linewidth', 2);
 
 
 Ih = speye(Ng); 
-R=Ih(3:end,:);
+R=Ih(3:end-1,:);
+R(end, :) = Ih(end,:);
 Kuu_global = R*Q'*Kuu_block*Q*R';
 Kua_global = R*Q'*Kua_block;
 Kau_global = Kau_block*Q*R';

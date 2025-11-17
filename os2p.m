@@ -1,22 +1,23 @@
 clear all; close all;
-N = 250;
+N = 200;
 
-rhos = [1, 1e-3];
-mus = [0.1e-4, 0.1e-4];
-% rhos = [3000, 1.2];
-% mus = [1e-1, 1e-3];
+rhos = [1, 1e-1];
+mus = [5e-5, 5e-6];
 sigmas = 0.06;
 sigmas = mus(1)/0.07;
+sigmas = 0.0;
 g = 9.81;
 g = 8.3e7*mus(1)^2/rhos(1)^2;
 
 alpha = 1;
 
+top_bc = 'W'
 
-f = mus(1)/(rhos(1)/2 + rhos(2));
-
-
-
+if top_bc == 'W'
+    f = 2*(mus(1)+mus(2))/(rhos(1)+rhos(2)); % If top is W BC 
+else
+    f = mus(1)/(rhos(1)/2 + rhos(2)); % If top is SYM BC
+end
 
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 x = (z-1.0)/2.0;
@@ -95,8 +96,14 @@ plot(Uplot, Uxplot, 'linewidth', 2);
 
 
 Ih = speye(Ng); 
-R=Ih(3:end-1,:);
-R(end, :) = Ih(end,:);
+if top_bc == 'W'
+    R=Ih(3:end-2,:);
+else
+    R=Ih(3:end-1,:);
+    R(end, :) = Ih(end,:);
+end
+
+
 Kuu_global = R*Q'*Kuu_block*Q*R';
 Kua_global = R*Q'*Kua_block;
 Kau_global = Kau_block*Q*R';
@@ -126,6 +133,7 @@ axis equal;
 
 unstable = find(imag(c) > 0.0);
 figure;
+a = vecs(end, unstable)
 v = T_block*Q*R'*vecs(1:end-1, unstable);
 v = reshape(v, [nh, 2]);
 u = alpha*1i*Dh*v;
@@ -140,3 +148,28 @@ N
 res = norm(K*vecs-M*vecs*diag(gamma))
 condK = cond(K)
 condM = cond(M)
+
+
+% Interpolate to Nek mesh
+nely = 20; % Nely in 1 phase
+Nf = 7; % lx1-1
+zf = zeros(nely*(Nf+1),1);
+[zff,wf] = zwgll(Nf);
+zff = zff/nely;
+for i=1:nely
+    zf((i-1)*(Nf+1)+1:i*(Nf+1)) = ((i-1)/(nely-1)*2 - 1)*(1-1/nely) + zff;
+end
+J = interp_mat(zf,z);
+vf = J*v; vf = vf(:);
+uf = J*u; uf = uf(:);
+data = [real(uf), imag(uf), real(vf), imag(vf)];
+fid = fopen("u2.txt", "w");
+fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! rhol, rhog, mul, mug\n", rhos(1), rhos(2), mus(1), mus(2));
+fprintf(fid, "% .16e  % .16e  % .16e  ! f, g, sigma\n", f, g, sigmas);
+fprintf(fid, "% .16e  ! alpha\n", alpha);
+fprintf(fid, "% .16e  % .16e  ! gamma\n", real(gamma(unstable)), imag(gamma(unstable)));
+fprintf(fid, "% .16e  % .16e  ! a\n", real(a), imag(a));
+fprintf(fid, "% .16e  % .16e  ! U1 = 1.0 + A*y + B*y^2\n", 1-f/2*rhos(1)/mus(1), -f/2*rhos(1)/mus(1)); % U profile in water
+fprintf(fid, "% .16e  % .16e  ! U2 = 1.0 + A*y + B*y^2\n", mus(1)/mus(2)-f/2*rhos(1)/mus(2),  -f/2*rhos(2)/mus(2)); % U profile in air
+fprintf(fid, "% .16e  % .16e  % .16e  % .16e\n", data.');
+fclose(fid);

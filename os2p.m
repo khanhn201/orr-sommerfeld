@@ -2,11 +2,11 @@ clear all; close all;
 output_precision(9);
 N = 250;
 
-rhos = [1, 1e-1];
+rhos = [1, 1e-3];
 mus = [1/3e4, 1/3e4*1e-2];
 sigmas = 0.06;
 sigmas = mus(1)/0.07;
-sigmas = 0.0;
+% sigmas = 0.0;
 g = 9.81;
 g = 8.3e7*mus(1)^2/rhos(1)^2;
 
@@ -155,12 +155,19 @@ ylim([-1, 0.2]);
 grid on;
 axis equal;
 
+N
+res = norm(K*vecs-M*vecs*diag(gamma))
+condK = cond(K)
+condM = cond(M)
+
 
 unstable = find(imag(c) > 0.0);
 c_unstable = c(unstable)
+unstable = unstable(1);
+vecs(:, unstable) = vecs(:, unstable)/abs(vecs(end, unstable));
 figure;
-a = vecs(end, unstable(1))
-v = T_block*Q*R'*vecs(1:end-1, unstable(1));
+a = vecs(end, unstable)
+v = T_block*Q*R'*vecs(1:end-1, unstable);
 u = alpha*1i*D_block*v;
 v = reshape(v, [nh, 2]);
 u = reshape(u, [nh, 2]);
@@ -170,20 +177,15 @@ figure;
 plot(abs(u), xs', 'linewidth', 2);
 title('U')
 
-N
-res = norm(K*vecs-M*vecs*diag(gamma))
-condK = cond(K)
-condM = cond(M)
-
 
 % Interpolate to Nek mesh
-nely = 20; % Nely in 1 phase
-Nf = 7; % lx1-1
-zf = zeros(nely*(Nf+1),1);
-[zff,wf] = zwgll(Nf);
+nely = 25; % Nely in 1 phase
+Nf = 8; % lx1
+zf = zeros(nely*Nf,1);
+[zff,wf] = zwgll(Nf-1);
 zff = zff/nely;
 for i=1:nely
-    zf((i-1)*(Nf+1)+1:i*(Nf+1)) = ((i-1)/(nely-1)*2 - 1)*(1-1/nely) + zff;
+    zf((i-1)*Nf+1:i*Nf) = ((i-1)/(nely-1)*2 - 1)*(1-1/nely) + zff;
 end
 J = interp_mat(zf,z);
 vf = J*v; vf = vf(:);

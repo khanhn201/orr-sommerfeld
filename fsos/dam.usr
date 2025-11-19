@@ -109,15 +109,15 @@ c-----------------------------------------------------------------------
       abfz(ix,iy,iz,e) = sfz
 
       ! explicit
-c     sfx = sfx/vtrans(ix,iy,iz,e,1)
-c     sfy = sfy/vtrans(ix,iy,iz,e,1)
-c     sfz = sfz/vtrans(ix,iy,iz,e,1)
-c     ffx = sfx + svvx + fflow/vtrans(ix,iy,iz,e,1)
-c     ffy = sfy + svvy - fgrav/vtrans(ix,iy,iz,e,1)
-c     ffz = sfz + svvz
-c     abfx(ix,iy,iz,e) = 0.0
-c     abfy(ix,iy,iz,e) = 0.0
-c     abfz(ix,iy,iz,e) = 0.0
+      sfx = sfx/vtrans(ix,iy,iz,e,1)
+      sfy = sfy/vtrans(ix,iy,iz,e,1)
+      sfz = sfz/vtrans(ix,iy,iz,e,1)
+      ffx = sfx + svvx + fflow/vtrans(ix,iy,iz,e,1)
+      ffy = sfy + svvy - fgrav/vtrans(ix,iy,iz,e,1)
+      ffz = sfz + svvz
+      abfx(ix,iy,iz,e) = 0.0
+      abfy(ix,iy,iz,e) = 0.0
+      abfz(ix,iy,iz,e) = 0.0
 
       return
       end
@@ -280,13 +280,13 @@ c       endif
 
       ! Calculate growth rate
       call copy(psifluid,t,ntot)
-c     do i=1,ntot
-c         if(ym1(i,1,1,1).lt.-0.1)then
-c           psifluid(i,1,1,1) = 1.0
-c         else
-c           psifluid(i,1,1,1) = 0.0
-c         endif
-c     enddo
+      do i=1,ntot
+          if(ym1(i,1,1,1).lt.-0.1)then
+            psifluid(i,1,1,1) = 1.0
+          else
+            psifluid(i,1,1,1) = 0.0
+          endif
+      enddo
       call col3(bfluid, bm1, psifluid, ntot)
       vol = glsum(bfluid,ntot)
       vy2 = glsc3(vy,bfluid,vy,ntot)/vol
@@ -404,7 +404,7 @@ c-----------------------------------------------------------------------
       integer ifdebug, ifixCLSbdry
       real farfield
 
-      eps = 1.5/(lx1-1.0)
+      eps = 1.7/(lx1-1.0)
       ifdebug = 0
       ifixCLSbdry = 0
       farfield = 0.0
@@ -490,8 +490,8 @@ c---------------------------------------------------------------------
       real heaviside
       integer e,eg,ex,ey,ez, nelx, nely, nelz,m,i,j,k,n
 
-      nelx = 120  ! must match .rea file
-      nely = 40
+      nelx = 150  ! must match .rea file
+      nely = 50
       nelz = 1
 
       eps = 1e-3

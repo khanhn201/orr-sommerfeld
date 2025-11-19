@@ -15,8 +15,8 @@ c-----------------------------------------------------------------------
       integer ifld_tls,ifld_tlsr
 
       common /fsos_usr/ rhol, rhog, mul, mug,
-     $                  facc, gacc, sigma_sf
-      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+     $                  f1acc, f2acc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, f1acc, f2acc, gacc, sigma_sf
 
       real psi, evm_getvisc
       real Re
@@ -74,12 +74,12 @@ c-----------------------------------------------------------------------
       integer ifld_tls,ifld_tlsr
 
       common /fsos_usr/ rhol, rhog, mul, mug,
-     $                  facc, gacc, sigma_sf
-      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+     $                  f1acc, f2acc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, f1acc, f2acc, gacc, sigma_sf
 
       real sfx,sfy,sfz
       real svvx,svvy,svvz
-      real psi, fgrav, fflow
+      real psi, fgrav, fflow, facc
 
 
       e = gllel(eg)
@@ -96,6 +96,7 @@ c-----------------------------------------------------------------------
 
       psi = t(ix,iy,iz,e,ifld_cls-1)
 
+      facc = psi*f1acc + (1.0-psi)*f2acc
       fgrav = vtrans(ix,iy,iz,e,1)*gacc
       fflow = vtrans(ix,iy,iz,e,1)*facc
 
@@ -279,13 +280,13 @@ c       endif
 
       ! Calculate growth rate
       call copy(psifluid,t,ntot)
-      do i=1,ntot
-          if(ym1(i,1,1,1).lt.-0.1)then
-            psifluid(i,1,1,1) = 1.0
-          else
-            psifluid(i,1,1,1) = 0.0
-          endif
-      enddo
+c     do i=1,ntot
+c         if(ym1(i,1,1,1).lt.-0.1)then
+c           psifluid(i,1,1,1) = 1.0
+c         else
+c           psifluid(i,1,1,1) = 0.0
+c         endif
+c     enddo
       call col3(bfluid, bm1, psifluid, ntot)
       vol = glsum(bfluid,ntot)
       vy2 = glsc3(vy,bfluid,vy,ntot)/vol
@@ -468,8 +469,8 @@ c---------------------------------------------------------------------
       include 'TOTAL'
 
       common /fsos_usr/ rhol, rhog, mul, mug,
-     $                  facc, gacc, sigma_sf
-      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+     $                  f1acc, f2acc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, f1acc, f2acc, gacc, sigma_sf
 
       common /fsparam/ eps,alpha,gamma_r,gamma_i
       common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
@@ -493,7 +494,7 @@ c---------------------------------------------------------------------
       nely = 40
       nelz = 1
 
-      eps = 1e-2
+      eps = 1e-3
 
       call rzero(ur,ly1*100)
       call rzero(ui,ly1*100)
@@ -504,7 +505,7 @@ c---------------------------------------------------------------------
       if (nid.eq.0) then
          open(unit=98,file='u2.txt')
          read(98,*) rhol, rhog, mul, mug
-         read(98,*) facc, gacc, sigma_sf
+         read(98,*) f1acc, f2acc, gacc, sigma_sf
          read(98,*) alpha
          read(98,*) gamma_r, gamma_i
          read(98,*) fsr, fsi
@@ -519,7 +520,8 @@ c---------------------------------------------------------------------
          rhog = 0.0
          mul = 0.0
          mug = 0.0
-         facc = 0.0
+         f1acc = 0.0
+         f2acc = 0.0
          gacc = 0.0
          sigma_sf = 0.0
          alpha = 0.0
@@ -541,7 +543,8 @@ c---------------------------------------------------------------------
       call gop ( rhog , wk , '+  ', 1 )
       call gop ( mul , wk , '+  ', 1 )
       call gop ( mug , wk , '+  ', 1 )
-      call gop ( facc , wk , '+  ', 1 )
+      call gop ( f1acc , wk , '+  ', 1 )
+      call gop ( f2acc , wk , '+  ', 1 )
       call gop ( gacc , wk , '+  ', 1 )
       call gop ( sigma_sf , wk , '+  ', 1 )
       call gop ( alpha , wk , '+  ', 1 )

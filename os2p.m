@@ -1,8 +1,9 @@
 clear all; close all;
-N = 200;
+output_precision(9);
+N = 250;
 
 rhos = [1, 1e-1];
-mus = [5e-5, 5e-6];
+mus = [1/3e4, 1/3e4*1e-2];
 sigmas = 0.06;
 sigmas = mus(1)/0.07;
 sigmas = 0.0;
@@ -10,21 +11,39 @@ g = 9.81;
 g = 8.3e7*mus(1)^2/rhos(1)^2;
 
 alpha = 1;
+h = 1; % Height of the air domain
 
 top_bc = 'W'
+accel_type = 'F'
 
 if top_bc == 'W'
-    f = 2*(mus(1)+mus(2))/(rhos(1)+rhos(2)); % If top is W BC 
-else
-    f = mus(1)/(rhos(1)/2 + rhos(2)); % If top is SYM BC
+    if accel_type == 'S' % same acceleration on both domains
+        f = 2*(mus(2) + mus(1)*h)/(rhos(1)*h + rhos(2)*h^2);
+        r = 1.0;
+    elseif accel_type == 'F' % Prescribed accel on fluid; ratio is computed correspondingly
+        f = mus(1)/rhos(1)*2;
+        r = (2*(mus(2)+mus(1)*h)/f-rhos(1)*h)/(h^2*rhos(2));
+    else % Prescribed f2/f1 ratio
+        r = 1/h;
+        f = 2*(mus(2)+mus(1)*h)/(r*(h^2*rhos(2)) + rhos(1)*h);
+    end
+else % Symmetry top bc
+    if accel_type == 'S' % same acceleration on both domains
+        f = mus(1)/(rhos(2)*h + rhos(1)/2)
+        r = 1.0
+    elseif accel_type == 'F' % Prescribed accel on fluid; ratio is computed correspondingly
+        f = mus(1)/rhos(1)*2;
+        r = 0.0;
+    else % Prescribed f2/f1 ratio
+        r = 1/h;
+        f = mus(1)/mus(2)/(rhos(1)/mus(2)/2 + h*r*rhos(2)/mus(2));
+    end
 end
 
-[Ah,Bh,Ch,Dh,z,w] = semhat(N);
-x = (z-1.0)/2.0;
-Lx2=1.0/2.0; Lxi=1./Lx2;
 
-Dh = Lxi*Dh;
-Bh = Lx2*Bh;
+
+[Ah,Bhh,Ch,Dhh,z,w] = semhat(N);
+
 
 Nelem = 2;
 nh = N + 1;
@@ -35,12 +54,6 @@ for e = 1:Nelem
     Q((e-1)*nh + (1:nh), gidx) = speye(nh);
 end
 
-T = speye(nh);
-T(2, :) = Dh(1,:);
-T(end-1, :) = speye(nh)(end, :);
-T(end, :) = Dh(end,:);
-T = inv(T);
-
 xs = [];
 Uxplot = [];
 Uplot = [];
@@ -48,13 +61,24 @@ for e = 1:Nelem
     rho = rhos(e);
     mu = mus(e);
 
-    x = -1.0 + 2.0*e/Nelem + (z-1.0)/Nelem;
-    xs = [xs; x'];
     if e == 1
+        x = (z-1.0)/2; % x = [-1, 0]
         U = 1.0 + (1-f/2*rho/mu)*x - (f/2*rho/mu)*x.^2;
+        Dh = 2*Dhh;
+        Bh = 1/2*Bhh;
     else
-        U = 1.0 + (mus(1)/mu - f/2*rhos(1)/mu)*x - (f/2*rho/mu)*x.^2;
+        x = (z+1.0)/2*h; % x = [0, h]
+        U = 1.0 + (mus(1)/mu - f/2*rhos(1)/mu)*x - (r*f/2*rho/mu)*x.^2;
+        Dh = 2/h*Dhh;
+        Bh = h/2*Bhh;
     end
+    T = speye(nh);
+    T(2, :) = Dh(1,:);
+    T(end-1, :) = speye(nh)(end, :);
+    T(end, :) = Dh(end,:);
+    T = inv(T);
+
+    xs = [xs; x'];
     Uxplot = [Uxplot;x];
     Uplot = [Uplot;U];
     DU = Dh * U;
@@ -90,6 +114,7 @@ for e = 1:Nelem
     Kau_block(1,(e-1)*(N+1)+1:e*(N+1)) =  Kau*T;
     Kua_block((e-1)*(N+1)+1:e*(N+1),1) =  T'*Kua;
     T_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T;
+    D_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Dh;
 end
 figure;
 plot(Uplot, Uxplot, 'linewidth', 2);
@@ -132,18 +157,19 @@ axis equal;
 
 
 unstable = find(imag(c) > 0.0);
+c_unstable = c(unstable)
 figure;
-a = vecs(end, unstable)
-v = T_block*Q*R'*vecs(1:end-1, unstable);
+a = vecs(end, unstable(1))
+v = T_block*Q*R'*vecs(1:end-1, unstable(1));
+u = alpha*1i*D_block*v;
 v = reshape(v, [nh, 2]);
-u = alpha*1i*Dh*v;
+u = reshape(u, [nh, 2]);
 plot(abs(v), xs', 'linewidth', 2)
 title('V')
 figure;
 plot(abs(u), xs', 'linewidth', 2);
 title('U')
 
-c(unstable)
 N
 res = norm(K*vecs-M*vecs*diag(gamma))
 condK = cond(K)
@@ -165,11 +191,11 @@ uf = J*u; uf = uf(:);
 data = [real(uf), imag(uf), real(vf), imag(vf)];
 fid = fopen("u2.txt", "w");
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! rhol, rhog, mul, mug\n", rhos(1), rhos(2), mus(1), mus(2));
-fprintf(fid, "% .16e  % .16e  % .16e  ! f, g, sigma\n", f, g, sigmas);
+fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! f1, f2, g, sigma\n", f, f*r, g, sigmas);
 fprintf(fid, "% .16e  ! alpha\n", alpha);
 fprintf(fid, "% .16e  % .16e  ! gamma\n", real(gamma(unstable)), imag(gamma(unstable)));
 fprintf(fid, "% .16e  % .16e  ! a\n", real(a), imag(a));
 fprintf(fid, "% .16e  % .16e  ! U1 = 1.0 + A*y + B*y^2\n", 1-f/2*rhos(1)/mus(1), -f/2*rhos(1)/mus(1)); % U profile in water
-fprintf(fid, "% .16e  % .16e  ! U2 = 1.0 + A*y + B*y^2\n", mus(1)/mus(2)-f/2*rhos(1)/mus(2),  -f/2*rhos(2)/mus(2)); % U profile in air
+fprintf(fid, "% .16e  % .16e  ! U2 = 1.0 + A*y + B*y^2\n", mus(1)/mus(2)-f/2*rhos(1)/mus(2),  -f*r/2*rhos(2)/mus(2)); % U profile in air
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e\n", data.');
 fclose(fid);

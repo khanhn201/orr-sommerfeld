@@ -1,6 +1,6 @@
 clear all; close all;
 output_precision(9);
-N = 250;
+N = 200;
 
 rhos = [1, 1e-3];
 mus = [1/3e4, 1/3e4*1e-2];
@@ -163,7 +163,7 @@ condM = cond(M)
 
 unstable = find(imag(c) > 0.0);
 c_unstable = c(unstable)
-unstable = unstable(1);
+unstable = unstable(2);
 vecs(:, unstable) = vecs(:, unstable)/abs(vecs(end, unstable));
 figure;
 a = vecs(end, unstable)

@@ -240,60 +240,35 @@ c-----------------------------------------------------------------------
       real vxx(lx1,ly1,lz1,lelt),vyy(lx1,ly1,lz1,lelt)
       real vzz(lx1,ly1,lz1,lelt)
 
-c     common /fspres/ pres_ic(lx1,ly1,lz1,lelt)
-c     real pres_ic
-
-      real fplot,fplot_next
-      save fplot_next
-      data fplot_next /0.0/
-
       ntot = lx1*ly1*lz1*nelv
 
-
-      pord = uparam(3)
-      call extrappr(prext,pr,prlag(1,1,1,1,1),prlag(1,1,1,1,2),pord)
-
-      ntlsr = uparam(1) !freq of TLS re-distancing
-      nclsr = uparam(2) !freq of CLS re-distancing
-
-      call LS_default_driver(ntlsr,nclsr)
-
       ! Initialize the first 5 steps with the same IC
-      if (istep.lt.20) then
+      if (istep.lt.5) then
         call gen_pert_ic
         call copy(t(1,1,1,1,1),temp_ic(1,1,1,1,1),ntot)
         call copy(t(1,1,1,1,3),temp_ic(1,1,1,1,1),ntot)
-c       if (istep.lt.1) then
-c         call copy(pr,pres_ic,ntot)
-c         vol = glsum(bm1,ntot) ! recenter pressure
-c         pr_avg = glsc2(bm1,pr,ntot)/vol
-c         call cadd(pr, -pr_avg, ntot)
-c       endif
-
-        if (istep.lt.10) then
-          do i=1,ntot
-            vx(i,1,1,1) = ub(i,1,1,1)
-            vy(i,1,1,1) = vb(i,1,1,1)
-          enddo
-        endif
+        do i=1,ntot
+          vx(i,1,1,1) = ub(i,1,1,1)
+          vy(i,1,1,1) = vb(i,1,1,1)
+        enddo
       endif
 
       ! Calculate growth rate
       call copy(psifluid,t,ntot)
-      do i=1,ntot
-          if(ym1(i,1,1,1).lt.-0.1)then
-            psifluid(i,1,1,1) = 1.0
-          else
-            psifluid(i,1,1,1) = 0.0
-          endif
-      enddo
+c     do i=1,ntot
+c         if(ym1(i,1,1,1).lt.-0.5)then
+c           psifluid(i,1,1,1) = 1.0
+c         else
+c           psifluid(i,1,1,1) = 0.0
+c         endif
+c     enddo
       call col3(bfluid, bm1, psifluid, ntot)
       vol = glsum(bfluid,ntot)
       vy2 = glsc3(vy,bfluid,vy,ntot)/vol
 
       if (vy2.gt.0.0) vy2 = sqrt(vy2)
 
-      if (istep.lt.5) then
+      if (istep.lt.10) then
          vy20 = vy2
          timestart=time
       else
@@ -305,30 +280,20 @@ c       endif
          if (nid.eq.0) write(6,1) istep,time,vol,gr,gl,ge
     1    format(i8,1p5e15.7,' AMP')
          if (nid.eq.0) write(6,2) istep,time,gamma_i, gamma_r
-    2    format(i8,1p7e15.7,' OS ')
+    2    format(i8,1p3e15.7,' OS ')
       endif
       vy2l = vy2
 
 
 
 
-      fplot = 0.1
-c     if(time .ge. fplot_next)then
-c     if(mod(istep, 10).eq.0)then
-c        call copy(vxx,vx,ntot)
-c        call copy(vyy,vy,ntot)
-c        call copy(vzz,vz,ntot)
-c        call col2(vxx,psifluid,ntot)
-c        call col2(vyy,psifluid,ntot)
-c        call col2(vzz,psifluid,ntot)
+      pord = uparam(3)
+      call extrappr(prext,pr,prlag(1,1,1,1,1),prlag(1,1,1,1,2),pord)
 
-c        fplot_next = fplot_next + fplot
-c        call outpost(vxx,vyy,vzz,visc,t(1,1,1,1,1),'dif')
+      ntlsr = uparam(1) !freq of TLS re-distancing
+      nclsr = uparam(2) !freq of CLS re-distancing
 
-c     endif
-c     endif
-
-
+      call LS_default_driver(ntlsr,nclsr)
 
       return
       end
@@ -404,7 +369,7 @@ c-----------------------------------------------------------------------
       integer ifdebug, ifixCLSbdry
       real farfield
 
-      eps = 1.7/(lx1-1.0)
+      eps = 1.5/(lx1-1.0)
       ifdebug = 0
       ifixCLSbdry = 0
       farfield = 0.0
@@ -490,11 +455,11 @@ c---------------------------------------------------------------------
       real heaviside
       integer e,eg,ex,ey,ez, nelx, nely, nelz,m,i,j,k,n
 
-      nelx = 150  ! must match .rea file
-      nely = 50
+      nelx = 60  ! must match .rea file
+      nely = 20
       nelz = 1
 
-      eps = 1e-3
+      eps = 1e-4
 
       call rzero(ur,ly1*100)
       call rzero(ui,ly1*100)
@@ -571,8 +536,9 @@ c---------------------------------------------------------------------
          s  = sin(ax)
          eg = lglel(e)
 
-
          disp = fsr*cos(ax) - fsi*sin(ax)
+
+         ! Level-set initialization
          do k=1,2
            h_local = epsamp*disp
            temp = h_local - y
@@ -582,6 +548,7 @@ c---------------------------------------------------------------------
            temp_ic(i,j,1,e,k) = temp
          enddo
 
+         ! Velocity initialization
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
          ub(i,j,1,e) = epsamp*(ur(j,ey)*c - ui(j,ey)*s)
          vb(i,j,1,e) = epsamp*(vr(j,ey)*c - vi(j,ey)*s)

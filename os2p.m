@@ -1,9 +1,13 @@
+% Based on Giannakis (2009)
+% https://doi.org/10.1016/j.jcp.2008.10.016
+% but extends to two phases flow
+
 clear all; close all;
 output_precision(9);
 N = 200;
 
 rhos = [1, 1e-3];
-mus = [1/3e4, 1/3e4*1e-2];
+mus = [1/3e4, 1/3e4*1e-3];
 sigmas = 0.06;
 sigmas = mus(1)/0.07;
 % sigmas = 0.0;
@@ -12,9 +16,10 @@ g = 8.3e7*mus(1)^2/rhos(1)^2;
 
 alpha = 1;
 h = 1; % Height of the air domain
+mode = 1; % Which of the unstable modes to output
 
 top_bc = 'W'
-accel_type = 'F'
+accel_type = 'S'
 
 if top_bc == 'W'
     if accel_type == 'S' % same acceleration on both domains
@@ -163,7 +168,7 @@ condM = cond(M)
 
 unstable = find(imag(c) > 0.0);
 c_unstable = c(unstable)
-unstable = unstable(2);
+unstable = unstable(mode);
 vecs(:, unstable) = vecs(:, unstable)/abs(vecs(end, unstable));
 figure;
 a = vecs(end, unstable)
@@ -179,7 +184,7 @@ title('U')
 
 
 % Interpolate to Nek mesh
-nely = 25; % Nely in 1 phase
+nely = 10; % Nely in 1 phase
 Nf = 8; % lx1
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);

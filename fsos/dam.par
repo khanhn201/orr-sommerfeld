@@ -9,7 +9,7 @@ stopAt = numSteps
 #endTime = 10 #10e-4
 numSteps = 10000
 
-dt = 1e-5
+dt = 1e-3
 timeStepper = bdf2 #With bdf2 SF does not work well
 #variabledt = yes
 #targetCFL = 0.1
@@ -17,10 +17,10 @@ timeStepper = bdf2 #With bdf2 SF does not work well
 
 #writeControl = runTime
 #writeInterval = 1e-0
-writeInterval = 10
+writeInterval = 100
 
-userParam01 = 1e-4     #Freq of TLSR
-userParam02 = 1e-4      #Freq of CLSR
+userParam01 = 1e-2     #Freq of TLSR
+userParam02 = 1e-2      #Freq of CLSR
 userParam03 = 2    #Pressure extrapolation order
 
 #filtering = hpfrt

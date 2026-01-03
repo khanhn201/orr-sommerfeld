@@ -121,8 +121,8 @@ for e = 1:Nelem
     T_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T;
     D_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Dh;
 end
-figure;
-plot(Uplot, Uxplot, 'linewidth', 2);
+% figure;
+% plot(Uplot, Uxplot, 'linewidth', 2);
 
 
 Ih = speye(Ng); 
@@ -151,14 +151,14 @@ M = [
 [vecs, gamma] = eig(K, M, 'vector');
 c = gamma*1i/alpha;
 
-figure;
-plot(real(c), imag(c), 'ok', 'linewidth', 2);
-xlabel('Re(c)');
-ylabel('Im(c)');
-xlim([-0.2, 1.8]);
-ylim([-1, 0.2]);
-grid on;
-axis equal;
+% figure;
+% plot(real(c), imag(c), 'ok', 'linewidth', 2);
+% xlabel('Re(c)');
+% ylabel('Im(c)');
+% xlim([-0.2, 1.8]);
+% ylim([-1, 0.2]);
+% grid on;
+% axis equal;
 
 N
 res = norm(K*vecs-M*vecs*diag(gamma))
@@ -170,32 +170,58 @@ unstable = find(imag(c) > 0.0);
 c_unstable = c(unstable)
 unstable = unstable(mode);
 vecs(:, unstable) = vecs(:, unstable)/abs(vecs(end, unstable));
-figure;
 a = vecs(end, unstable)
 v = T_block*Q*R'*vecs(1:end-1, unstable);
 u = alpha*1i*D_block*v;
 v = reshape(v, [nh, 2]);
 u = reshape(u, [nh, 2]);
-plot(abs(v), xs', 'linewidth', 2)
-title('V')
-figure;
-plot(abs(u), xs', 'linewidth', 2);
-title('U')
+% figure;
+% plot(abs(v), xs', 'linewidth', 2)
+% title('V')
+% figure;
+% plot(abs(u), xs', 'linewidth', 2);
+% title('U')
 
 
 % Interpolate to Nek mesh
-nely = 10; % Nely in 1 phase
+nely = 20; % Nely in 1 phase; must be divisible by 2 for geometric
+nelx = -60;
 Nf = 8; % lx1
+el_ratio = 8.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
-zff = zff/nely;
+el_pos = linspace(-1, 1, nely + 1); % Linear element
+geom_fac = (el_ratio)^(1/(nely/2));
+
+el_pos_tmp = geom_fac.^(0:nely/2) - 1.0;
+el_pos_tmp = el_pos_tmp/el_pos_tmp(end) - 1.0;
+el_pos_tmp2 = flip(-el_pos_tmp);
+el_pos(1:nely/2+1) = el_pos_tmp;
+el_pos(nely/2+1:end) = el_pos_tmp2;
+
+delta_el = diff(el_pos);
+min_delta = min(delta_el)/2
+max_delta = max(delta_el)/2
+el_center = (el_pos(2:end) + el_pos(1:end-1))/2.0;
 for i=1:nely
-    zf((i-1)*Nf+1:i*Nf) = ((i-1)/(nely-1)*2 - 1)*(1-1/nely) + zff;
+    zf((i-1)*Nf+1:i*Nf) = el_center(i) + zff*delta_el(i)/2.0;
 end
+figure
+for i=1:size(zf,1)
+    t = linspace(0, 1, 2);
+    plot(t, zf(i) + t*0, '--k', 'linewidth', 1); hold on;
+end
+for i=1:size(el_pos,2)
+    t = linspace(0, 1, 2);
+    plot(t, el_pos(i) + t*0, '-k', 'linewidth', 3);
+end
+
 J = interp_mat(zf,z);
 vf = J*v; vf = vf(:);
 uf = J*u; uf = uf(:);
 data = [real(uf), imag(uf), real(vf), imag(vf)];
+
+% u2.txt
 fid = fopen("u2.txt", "w");
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! rhol, rhog, mul, mug\n", rhos(1), rhos(2), mus(1), mus(2));
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! f1, f2, g, sigma\n", f, f*r, g, sigmas);
@@ -205,4 +231,23 @@ fprintf(fid, "% .16e  % .16e  ! a\n", real(a), imag(a));
 fprintf(fid, "% .16e  % .16e  ! U1 = 1.0 + A*y + B*y^2\n", 1-f/2*rhos(1)/mus(1), -f/2*rhos(1)/mus(1)); % U profile in water
 fprintf(fid, "% .16e  % .16e  ! U2 = 1.0 + A*y + B*y^2\n", mus(1)/mus(2)-f/2*rhos(1)/mus(2),  -f*r/2*rhos(2)/mus(2)); % U profile in air
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e\n", data.');
+fclose(fid);
+
+
+% Box file
+el_pos_real = 1:(nely*2 + 1);
+el_pos_real(1:nely+1) = (el_pos - 1.0)/2.0;
+el_pos_real(nely+1:end) = (el_pos + 1.0)/2.0;
+fid = fopen("fs_g.box", "w");
+fprintf(fid, "-2\n");
+fprintf(fid, "5\n");
+fprintf(fid, "Box\n");
+fprintf(fid, "%d %d\n", nelx, nely*2);
+fprintf(fid, "0 6.0 1.\n");
+fprintf(fid, "%f\n", el_pos_real);
+fprintf(fid, "P  ,P  ,W  ,SYM\n");
+fprintf(fid, "P  ,P  ,I  ,I  \n");
+fprintf(fid, "P  ,P  ,I  ,I  \n");
+fprintf(fid, "P  ,P  ,I  ,I  \n");
+fprintf(fid, "P  ,P  ,I  ,I  \n");
 fclose(fid);

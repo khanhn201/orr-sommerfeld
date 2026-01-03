@@ -2,22 +2,18 @@
 # nek parameter file
 #
 [GENERAL]
-#startFrom = c1.f00000 int
-stopAt = numSteps
-#stopAt = endTime
+stopAt = endTime
 #numSteps = 500000 #12000 #1000 #16000 #4000 #400 #400 #200000
-#endTime = 10 #10e-4
-numSteps = 10000
+endTime = 20 #10e-4
 
-dt = 1e-3
+dt = 1e-2
 timeStepper = bdf2 #With bdf2 SF does not work well
-#variabledt = yes
-#targetCFL = 0.1
-#extrapolation = OIFS
+variabledt = yes
+targetCFL = 0.1
+extrapolation = OIFS
 
-#writeControl = runTime
-#writeInterval = 1e-0
-writeInterval = 100
+writeControl = runTime
+writeInterval = 1
 
 userParam01 = 1e-2     #Freq of TLSR
 userParam02 = 1e-2      #Freq of CLSR

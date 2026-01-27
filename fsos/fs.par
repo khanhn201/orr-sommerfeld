@@ -12,8 +12,8 @@ variabledt = yes
 targetCFL = 0.1
 extrapolation = OIFS
 
-writeControl = runTime
-writeInterval = 1
+# writeControl = runTime
+writeInterval = 5
 
 userParam01 = 1e-2     #Freq of TLSR
 userParam02 = 1e-2      #Freq of CLSR

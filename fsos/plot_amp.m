@@ -2,24 +2,24 @@ gr = 7.5891076682694115e-03;
 
 cases = {
   'R3',  'r3/r3.log';
-  'R2',  'r2/r2.log';
+  % 'R2',  'r2/r2.log';
   'H06', 'h06/h06.log';
-  'H06R1', 'h06r1/h06r1.log';
+  % 'H06R1', 'h06r1/h06r1.log';
   % 'H06N10', 'h06n10/h06n10.log';
   % 'H06N10R3', 'h06n10r3/h06n10r3.log';
   % 'H06N10I', 'h06n10i/h06n10i.log';
   'H05', 'h05/h05.log';
-  'H05E2', 'h05e2/h05e2.log';
-  'H05A2', 'h05a2/h05a2.log';
-  'H05A2F', 'h05a2f/h05a2f.log';
-  'H05A4F', 'h05a4f/h05a4f.log';
+  % 'H05E2', 'h05e2/h05e2.log';
+  % 'H05A2', 'h05a2/h05a2.log';
+  % 'H05A2F', 'h05a2f/h05a2f.log';
+  % 'H05A4F', 'h05a4f/h05a4f.log';
   % 'H05A4R1F', 'h05a4r1f/h05a4r1f.log';
   % 'H05A4R2F', 'h05a4r2f/h05a4r2f.log';
-  'H05A4R2C5F', 'h05a4r2c5f/h05a4r2c5f.log';
-  'H05A4R3C2F', 'h05a4r3c2f/h05a4r3c2f.log';
-  'M2X10', 'm2x10/m2x10.log';
+  % 'H05A4R2C5F', 'h05a4r2c5f/h05a4r2c5f.log';
+  % 'H05A4R3C2F', 'h05a4r3c2f/h05a4r3c2f.log';
+  % 'M2X10', 'm2x10/m2x10.log';
   'M2X10F', 'm2x10f/m2x10f.log';
-  'M8X10', 'm8x10/m8x10.log';
+  % 'M8X10', 'm8x10/m8x10.log';
   'M8X05', 'm8x05/m8x05.log';
 };
 
@@ -70,6 +70,7 @@ end
 
 set(gca, 'fontsize', 20, 'linewidth', 2);
 legend({D.name});
+xlim([0 15]);
 xlabel('t');
 ylabel('Error');
 title('Culmulative error')

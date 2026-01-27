@@ -439,10 +439,11 @@ c---------------------------------------------------------------------
       common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
       real eps, alpha, gamma_r, gamma_i
       real ub, vb
-      common /scrns/ ur(ly1,100),ui(ly1,100),vr(ly1,100),vi(ly1,100)
+      common /scrns/ ur(ly1,1000),ui(ly1,1000),vr(ly1,1000),vi(ly1,1000)
       real ur, ui, vr, vi
-      common /scruz/ wk(ly1,100)
+      common /scruz/ wk(ly1,1000)
       real wk
+      integer iwk
       
       common /fstemp/ temp_ic(lx1,ly1,lz1,lelv,2)
       real temp_ic
@@ -453,20 +454,18 @@ c---------------------------------------------------------------------
       real heaviside
       integer e,eg,ex,ey,ez, nelx, nely, nelz,m,i,j,k,n
 
-      nelx = 120  ! must match .rea file
-      nely = 40
       nelz = 1
 
       eps = 1e-4
 
-      call rzero(ur,ly1*100)
-      call rzero(ui,ly1*100)
-      call rzero(vr,ly1*100)
-      call rzero(vi,ly1*100)
+      call rzero(ur,ly1*1000)
+      call rzero(ui,ly1*1000)
+      call rzero(vr,ly1*1000)
+      call rzero(vi,ly1*1000)
 
-      m = ny1*nely
       if (nid.eq.0) then
          open(unit=98,file='u2.txt')
+         read(98,*) nelx, nely
          read(98,*) rhol, rhog, mul, mug
          read(98,*) f1acc, f2acc, gacc, sigma_sf
          read(98,*) alpha
@@ -474,11 +473,14 @@ c---------------------------------------------------------------------
          read(98,*) fsr, fsi
          read(98,*) Ul1, Ul2
          read(98,*) Ug1, Ug2
+         m = ny1*nely
          do i=1,m
             read(98,*) ur(i,1),ui(i,1),vr(i,1),vi(i,1)
          enddo
          close(98)
       else
+         nelx = 0
+         nely = 0
          rhol = 0.0
          rhog = 0.0
          mul = 0.0
@@ -496,12 +498,16 @@ c---------------------------------------------------------------------
          Ul2 = 0.0
          Ug1 = 0.0
          Ug2 = 0.0
+         m = 0
       endif
 
-      call gop ( ur , wk , '+  ', m ) ! gather over all procs
+      call igop ( m , iwk , '+  ', 1 )
+      call gop ( ur , wk , '+  ', m )  ! gather over all procs
       call gop ( ui , wk , '+  ', m )
       call gop ( vr , wk , '+  ', m )
       call gop ( vi , wk , '+  ', m )
+      call igop ( nelx , iwk , '+  ', 1 )
+      call igop ( nely , iwk , '+  ', 1 )
       call gop ( rhol , wk , '+  ', 1 )
       call gop ( rhog , wk , '+  ', 1 )
       call gop ( mul , wk , '+  ', 1 )

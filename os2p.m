@@ -184,20 +184,20 @@ u = reshape(u, [nh, 2]);
 
 
 % Interpolate to Nek mesh
-nely = 20; % Nely in 1 phase; must be divisible by 2 for geometric
-nelx = -60;
+nely = 40; % Nely in 1 phase; must be divisible by 2 for geometric
+nelx = -100;
 Nf = 8; % lx1
 el_ratio = 8.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
 el_pos = linspace(-1, 1, nely + 1); % Linear element
-geom_fac = (el_ratio)^(1/(nely/2));
-
-el_pos_tmp = geom_fac.^(0:nely/2) - 1.0;
-el_pos_tmp = el_pos_tmp/el_pos_tmp(end) - 1.0;
-el_pos_tmp2 = flip(-el_pos_tmp);
-el_pos(1:nely/2+1) = el_pos_tmp;
-el_pos(nely/2+1:end) = el_pos_tmp2;
+% geom_fac = (el_ratio)^(1/(nely/2));
+%
+% el_pos_tmp = geom_fac.^(0:nely/2) - 1.0;
+% el_pos_tmp = el_pos_tmp/el_pos_tmp(end) - 1.0;
+% el_pos_tmp2 = flip(-el_pos_tmp);
+% el_pos(1:nely/2+1) = el_pos_tmp;
+% el_pos(nely/2+1:end) = el_pos_tmp2;
 
 delta_el = diff(el_pos);
 min_delta = min(delta_el)/2
@@ -205,15 +205,6 @@ max_delta = max(delta_el)/2
 el_center = (el_pos(2:end) + el_pos(1:end-1))/2.0;
 for i=1:nely
     zf((i-1)*Nf+1:i*Nf) = el_center(i) + zff*delta_el(i)/2.0;
-end
-figure
-for i=1:size(zf,1)
-    t = linspace(0, 1, 2);
-    plot(t, zf(i) + t*0, '--k', 'linewidth', 1); hold on;
-end
-for i=1:size(el_pos,2)
-    t = linspace(0, 1, 2);
-    plot(t, el_pos(i) + t*0, '-k', 'linewidth', 3);
 end
 
 J = interp_mat(zf,z);
@@ -223,6 +214,7 @@ data = [real(uf), imag(uf), real(vf), imag(vf)];
 
 % u2.txt
 fid = fopen("u2.txt", "w");
+fprintf(fid, "%d  %d  ! nelx, nely\n", -nelx, nely*2);
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! rhol, rhog, mul, mug\n", rhos(1), rhos(2), mus(1), mus(2));
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! f1, f2, g, sigma\n", f, f*r, g, sigmas);
 fprintf(fid, "% .16e  ! alpha\n", alpha);

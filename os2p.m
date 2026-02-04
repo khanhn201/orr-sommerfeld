@@ -185,19 +185,19 @@ u = reshape(u, [nh, 2]);
 
 % Interpolate to Nek mesh
 nely = 40; % Nely in 1 phase; must be divisible by 2 for geometric
-nelx = -100;
+nelx = -150;
 Nf = 8; % lx1
 el_ratio = 8.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
 el_pos = linspace(-1, 1, nely + 1); % Linear element
-% geom_fac = (el_ratio)^(1/(nely/2));
-%
-% el_pos_tmp = geom_fac.^(0:nely/2) - 1.0;
-% el_pos_tmp = el_pos_tmp/el_pos_tmp(end) - 1.0;
-% el_pos_tmp2 = flip(-el_pos_tmp);
-% el_pos(1:nely/2+1) = el_pos_tmp;
-% el_pos(nely/2+1:end) = el_pos_tmp2;
+
+geom_fac = (el_ratio)^(1/(nely/2));
+el_pos_tmp = geom_fac.^(0:nely/2) - 1.0;
+el_pos_tmp = el_pos_tmp/el_pos_tmp(end) - 1.0;
+el_pos_tmp2 = flip(-el_pos_tmp);
+el_pos(1:nely/2+1) = el_pos_tmp;
+el_pos(nely/2+1:end) = el_pos_tmp2;
 
 delta_el = diff(el_pos);
 min_delta = min(delta_el)/2

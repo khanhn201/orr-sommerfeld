@@ -21,6 +21,10 @@ cases = {
   'M2X10F', 'm2x10f/m2x10f.log';
   % 'M8X10', 'm8x10/m8x10.log';
   'M8X05', 'm8x05/m8x05.log';
+  'M8X04', 'm8x04.log';
+  'M8X04C5', 'm8x04c5.log';
+  'H01A4F', 'h01a4f/h01a4f.log';
+  'H01A4C2F', 'h01a4c2f/h01a4c2f.log';
 };
 
 
@@ -45,19 +49,19 @@ end
 % Plot
 figpos = [100 100 1200 700];
 
-% figure('Position', figpos);
-% hold on;
-% for k = 1:nc
-%   t = D(k).data.t;
-%   g = D(k).data.g;
-%   semilogy(t, min(abs(g - gr)/gr, 1.0), 'linewidth', 2);
-% end
-%
-% set(gca, 'fontsize', 20, 'linewidth', 2);
-% legend({D.name});
-% xlabel('t');
-% ylabel('Error');
-% title('Step-wise error')
+figure('Position', figpos);
+hold on;
+for k = 1:nc
+  t = D(k).data.t;
+  g = D(k).data.g;
+  semilogy(t, min(abs(g - gr)/gr, 1.0), 'linewidth', 2);
+end
+
+set(gca, 'fontsize', 20, 'linewidth', 2);
+legend({D.name});
+xlabel('t');
+ylabel('Error');
+title('Step-wise error')
 
 
 figure('Position', figpos);

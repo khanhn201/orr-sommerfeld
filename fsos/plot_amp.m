@@ -1,14 +1,14 @@
 gr = 7.5891076682694115e-03;
 
 cases = {
-  'R3',  'r3/r3.log';
+  % 'R3',  'r3/r3.log';
   % 'R2',  'r2/r2.log';
   'H06', 'h06/h06.log';
   % 'H06R1', 'h06r1/h06r1.log';
   % 'H06N10', 'h06n10/h06n10.log';
   % 'H06N10R3', 'h06n10r3/h06n10r3.log';
   % 'H06N10I', 'h06n10i/h06n10i.log';
-  'H05', 'h05/h05.log';
+  % 'H05', 'h05/h05.log';
   % 'H05E2', 'h05e2/h05e2.log';
   % 'H05A2', 'h05a2/h05a2.log';
   % 'H05A2F', 'h05a2f/h05a2f.log';
@@ -18,13 +18,18 @@ cases = {
   % 'H05A4R2C5F', 'h05a4r2c5f/h05a4r2c5f.log';
   % 'H05A4R3C2F', 'h05a4r3c2f/h05a4r3c2f.log';
   % 'M2X10', 'm2x10/m2x10.log';
-  'M2X10F', 'm2x10f/m2x10f.log';
+  % 'M2X10F', 'm2x10f/m2x10f.log';
   % 'M8X10', 'm8x10/m8x10.log';
-  'M8X05', 'm8x05/m8x05.log';
-  'M8X04', 'm8x04.log';
+  % 'M8X05', 'm8x05/m8x05.log';
+  % 'M8X04', 'm8x04.log';
   'M8X04C5', 'm8x04c5.log';
+  'M16X06', 'm16x06.log';
+  'M16X06C10', 'm16x06c10.log';
+  'M16X06C10L2', 'm16x06c10l2/m16x06c10l2.log';
+  'M16X06C10L2VP', 'm16x06c10l2vp.log';
+  'M16X06L2', 'm16x06l2.log';
   'H01A4F', 'h01a4f/h01a4f.log';
-  'H01A4C2F', 'h01a4c2f/h01a4c2f.log';
+  % 'H01A4C2F', 'h01a4c2f/h01a4c2f.log';
 };
 
 
@@ -49,19 +54,19 @@ end
 % Plot
 figpos = [100 100 1200 700];
 
-figure('Position', figpos);
-hold on;
-for k = 1:nc
-  t = D(k).data.t;
-  g = D(k).data.g;
-  semilogy(t, min(abs(g - gr)/gr, 1.0), 'linewidth', 2);
-end
-
-set(gca, 'fontsize', 20, 'linewidth', 2);
-legend({D.name});
-xlabel('t');
-ylabel('Error');
-title('Step-wise error')
+% figure('Position', figpos);
+% hold on;
+% for k = 1:nc
+%   t = D(k).data.t;
+%   g = D(k).data.g;
+%   semilogy(t, min(abs(g - gr)/gr, 1.0), 'linewidth', 2);
+% end
+%
+% set(gca, 'fontsize', 20, 'linewidth', 2);
+% legend({D.name});
+% xlabel('t');
+% ylabel('Error');
+% title('Step-wise error')
 
 
 figure('Position', figpos);
@@ -74,7 +79,7 @@ end
 
 set(gca, 'fontsize', 20, 'linewidth', 2);
 legend({D.name});
-xlim([0 15]);
+xlim([0 20]);
 xlabel('t');
 ylabel('Error');
 title('Culmulative error')

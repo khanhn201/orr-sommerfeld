@@ -3,17 +3,17 @@
 #
 [GENERAL]
 stopAt = endTime
-#numSteps = 500000 #12000 #1000 #16000 #4000 #400 #400 #200000
+# numSteps = 500 #12000 #1000 #16000 #4000 #400 #400 #200000
 endTime = 20 #10e-4
 
-dt = 1e-4
+dt = 1e-2
 timeStepper = bdf2 #With bdf2 SF does not work well
 variabledt = yes
 targetCFL = 0.1
 extrapolation = OIFS
 
 writeControl = runTime
-writeInterval = 0.25
+writeInterval = 0.5
 
 userParam01 = 1e-1     #Freq of TLSR
 userParam02 = 1e-1      #Freq of CLSR

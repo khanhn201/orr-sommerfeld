@@ -175,19 +175,19 @@ v = T_block*Q*R'*vecs(1:end-1, unstable);
 u = alpha*1i*D_block*v;
 v = reshape(v, [nh, 2]);
 u = reshape(u, [nh, 2]);
-% figure;
-% plot(abs(v), xs', 'linewidth', 2)
-% title('V')
-% figure;
-% plot(abs(u), xs', 'linewidth', 2);
-% title('U')
+figure;
+plot(imag(v), xs', 'linewidth', 2)
+title('V')
+figure;
+plot(imag(u), xs', 'linewidth', 2);
+title('U')
 
 
 % Interpolate to Nek mesh
-nely = 40; % Nely in 1 phase; must be divisible by 2 for geometric
-nelx = -150;
+nely = 30; % Nely in 1 phase; must be divisible by 2 for geometric
+nelx = -90;
 Nf = 8; % lx1
-el_ratio = 8.0000;
+el_ratio = 16.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
 el_pos = linspace(-1, 1, nely + 1); % Linear element

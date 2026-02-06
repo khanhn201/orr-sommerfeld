@@ -45,7 +45,8 @@ c-----------------------------------------------------------------------
         if(istep.le.2)then
           vtrans0(ix,iy,iz,e) = utrans
         else
-          vtrans0(ix,iy,iz,e) = rhog/rhol
+          vtrans0(ix,iy,iz,e) = utrans
+c         vtrans0(ix,iy,iz,e) = rhog/rhol
         endif
       else
         utrans = 1.0
@@ -268,7 +269,13 @@ c     enddo
 
       if (vy2.gt.0.0) vy2 = sqrt(vy2)
 
-      if (istep.le.5) then
+      if (istep.le.20) then
+         vy2r = vy2/vy20
+         vy2l = vy2/vy2l
+         gr = log(vy2r)/(time-timestart)
+         gl = log(vy2l)/dt
+         ge = abs(gr - gamma_r)/gamma_r
+         if (nid.eq.0) write(6,1) istep,time,vol,gr,gl,ge
          vy20 = vy2
          timestart=time
       else
@@ -367,7 +374,7 @@ c-----------------------------------------------------------------------
       integer ifdebug, ifixCLSbdry
       real farfield
 
-      eps = 1.5/(lx1-1.0)
+      eps = 1.5/(lx1-1.0)/2.0
       ifdebug = 0
       ifixCLSbdry = 0
       farfield = 0.0

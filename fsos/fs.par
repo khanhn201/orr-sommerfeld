@@ -3,8 +3,8 @@
 #
 [GENERAL]
 stopAt = endTime
-# numSteps = 500 #12000 #1000 #16000 #4000 #400 #400 #200000
-endTime = 20 #10e-4
+#numSteps = 50 #12000 #1000 #16000 #4000 #400 #400 #200000
+endTime = 150 #10e-4
 
 dt = 1e-2
 timeStepper = bdf2 #With bdf2 SF does not work well
@@ -15,8 +15,8 @@ extrapolation = OIFS
 writeControl = runTime
 writeInterval = 0.5
 
-userParam01 = 1e-1     #Freq of TLSR
-userParam02 = 1e-1      #Freq of CLSR
+userParam01 = 1e-0     #Freq of TLSR
+userParam02 = 1e-0      #Freq of CLSR
 userParam03 = 2    #Pressure extrapolation order
 
 #filtering = hpfrt

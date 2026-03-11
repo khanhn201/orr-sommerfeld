@@ -275,9 +275,11 @@ c     enddo
          gr = log(vy2r)/(time-timestart)
          gl = log(vy2l)/dt
          ge = abs(gr - gamma_r)/gamma_r
-         if (nid.eq.0) write(6,1) istep,time,vol,gr,gl,ge
-         vy20 = vy2
-         timestart=time
+         if (istep.ge.2) then
+            if (nid.eq.0) write(6,1) istep,time,vol,gr,gl,ge
+            vy20 = vy2
+            timestart=time
+         endif
       else
          vy2r = vy2/vy20
          vy2l = vy2/vy2l
@@ -374,7 +376,7 @@ c-----------------------------------------------------------------------
       integer ifdebug, ifixCLSbdry
       real farfield
 
-      eps = 1.5/(lx1-1.0)/2.0
+      eps = 1.5/(lx1-1.0)/6.0
       ifdebug = 0
       ifixCLSbdry = 0
       farfield = 0.0

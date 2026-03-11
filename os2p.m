@@ -4,6 +4,9 @@
 
 clear all; close all;
 output_precision(9);
+set(0, "defaultAxesFontSize", 48)
+set(0, "defaultTextFontSize", 48)
+set(0, "defaultLineLineWidth", 2)
 N = 200;
 
 rhos = [1, 1e-3];
@@ -152,13 +155,20 @@ M = [
 c = gamma*1i/alpha;
 
 % figure;
-% plot(real(c), imag(c), 'ok', 'linewidth', 2);
-% xlabel('Re(c)');
-% ylabel('Im(c)');
-% xlim([-0.2, 1.8]);
-% ylim([-1, 0.2]);
+% plot(real(c), imag(c), 'xr', "markersize", 15); hold on;
+% A = load("giannakis_rosner.dat");
+% x = A(:,1);
+% y = A(:,2);
+% plot(x, y, "ok", "markersize", 15)
+% legend("Density ratio = 10", "Giannakis 2009")
+% xlabel('Im(gamma)');
+% ylabel('Re(gamma)');
+% xlim([-0.2, 1.5]);
+% ylim([-0.00, 0.01]);
 % grid on;
-% axis equal;
+%
+%
+% asdfzcxvxcv
 
 N
 res = norm(K*vecs-M*vecs*diag(gamma))
@@ -172,7 +182,7 @@ unstable = unstable(mode);
 vecs(:, unstable) = vecs(:, unstable)/abs(vecs(end, unstable));
 a = vecs(end, unstable)
 v = T_block*Q*R'*vecs(1:end-1, unstable);
-u = alpha*1i*D_block*v;
+u = 1i/alpha*D_block*v;
 v = reshape(v, [nh, 2]);
 u = reshape(u, [nh, 2]);
 figure;
@@ -183,11 +193,22 @@ plot(imag(u), xs', 'linewidth', 2);
 title('U')
 
 
+% figure; hold on;
+% for x=xs(1,:);
+%   plot([0, 1], [x,x], '-k');
+% end
+% for x=xs(2,:);
+%   plot([0, 1], [x,x], '-k');
+% end
+% plot([0, 1], [0,0], '-r', 'linewidth', 4);
+% plot([0, 1], [1,1], '-b', 'linewidth', 4);
+% plot([0, 1], [-1,-1], '-b', 'linewidth', 4);
+
 % Interpolate to Nek mesh
-nely = 30; % Nely in 1 phase; must be divisible by 2 for geometric
-nelx = -90;
-Nf = 8; % lx1
-el_ratio = 16.0000;
+nely = 40; % Nely in 1 phase; must be divisible by 2 for geometric
+nelx = -60;
+Nf = 6; % lx1
+el_ratio = 32.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
 el_pos = linspace(-1, 1, nely + 1); % Linear element

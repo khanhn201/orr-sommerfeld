@@ -3,7 +3,7 @@ gr = 7.5891076682694115e-03;
 cases = {
   % 'R3',  'r3/r3.log';
   % 'R2',  'r2/r2.log';
-  'H06', 'h06/h06.log';
+  % 'H06', 'h06/h06.log';
   % 'H06R1', 'h06r1/h06r1.log';
   % 'H06N10', 'h06n10/h06n10.log';
   % 'H06N10R3', 'h06n10r3/h06n10r3.log';
@@ -22,14 +22,40 @@ cases = {
   % 'M8X10', 'm8x10/m8x10.log';
   % 'M8X05', 'm8x05/m8x05.log';
   % 'M8X04', 'm8x04.log';
-  'M8X04C5', 'm8x04c5.log';
-  'M16X06', 'm16x06.log';
-  'M16X06C10', 'm16x06c10.log';
-  'M16X06C10L2', 'm16x06c10l2/m16x06c10l2.log';
-  'M16X06C10L2VP', 'm16x06c10l2vp.log';
-  'M16X06L2', 'm16x06l2.log';
-  'H01A4F', 'h01a4f/h01a4f.log';
+  % 'M8X04C5', 'm8x04c5.log';
+  % 'M16X06', 'm16x06.log';
+  % 'M16X06C10', 'm16x06c10.log';
+  % 'M16X06C10L2', 'm16x06c10l2/m16x06c10l2.log';
+  % 'M16X06C10L2VP', 'enzo_m16x06c10l2vp/enzo_m16x06c10l2vp.log';
+  % 'M16X06C50L2VP', 'enzo_m16x06c50l2vp.log';
+  % 'M16X06C50L8VP', 'enzo_m16x06c50l8vp.log';
+  % 'M16X06C10L8VP', 'enzo_m16x06c10l8vp.log';
+  % 'M16X06C10L8R2VP', 'enzo_m16x06c10l8r2vp.log';
+  % 'M16X04C10L8VP', 'enzo_m16x04c10l8vp.log';
+  % 'M16X04C50L4VP', 'enzo_m16x04c50l4vp.log';
+  % 'M16X04C10L4VP', 'enzo_m16x04c10l4vp.log';
+  % 'M16X04C10L4R2VP', 'enzo_m16x04c10l4r2vp.log';
+  % 'M16X10C50L6VP', 'enzo_m16x10c50l6vp.log';
+  'N6M16X10C10L6VP', 'enzo_m16x10c10l6vp.log';
+  % 'M16X10C10L10VP', 'm16x10c10l10vp.log';
+  % 'M16X06C50L4VP', 'enzo_m16x06c50l4vp.log';
+  % 'M16X20C05L12WVP', 'enzo_m16x20c05l12wvp.log';
+  % 'M16X20C05L12VP', 'enzo_m16x20c05l12vp.log';
+  % 'M16X20C02L12VP', 'enzo_m16x20c02l12vp.log';
+  % 'M64X10C10L6VP', 'enzo_m64x10c10l6vp.log';
+  % 'M64X10C10L6TVP', 'enzo_m64x10c10l6tvp.log';
+  % 'M16X10C05L10R2VP', 'enzo_m16x10c05l10r2vp/enzo_m16x10c05l10r2vp.log';
+  % 'M16X06C05L8VP', 'enzo_m16x06c05l8vp.log';
+  % 'M16X06L2', 'm16x06l2.log';
+  % 'H01A4F', 'h01a4f/h01a4f.log';
   % 'H01A4C2F', 'h01a4c2f/h01a4c2f.log';
+  % 'M32X10C50L6VP', 'enzo_m32x10c50l6vp.log';
+  'M32X10C10L6VP', 'enzo_m32x10c10l6vp.log';
+  % 'M32X10C50L6R1VP', 'enzo_m32x10c50l6r1vp.log';
+  'M32X10C10L6Z5VP', 'enzo_m32x10c10l6z5vp.log';
+  'M32X20C10L6VP', 'enzo_m32x20c10l6vp.log';
+  'M32X10C10L6VP_log', 'enzo/fsosm32x10c10l6.log';
+  'N6M32X10C10L6VP', 'enzo_n6m32x10c10l6vp.log';
 };
 
 
@@ -79,7 +105,7 @@ end
 
 set(gca, 'fontsize', 20, 'linewidth', 2);
 legend({D.name});
-xlim([0 20]);
+% xlim([0 20]);
 xlabel('t');
 ylabel('Error');
 title('Culmulative error')

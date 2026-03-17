@@ -333,6 +333,7 @@ c-----------------------------------------------------------------------
       integer ntot,i, iface, iel
       real xx, yy
       real xlength
+      real alpha
 
       ifld_cls = 2
       ifld_tls = 3
@@ -341,7 +342,20 @@ c-----------------------------------------------------------------------
       
       ntot = lx1*ly1*lz1*nelt
 
-      xlength = 2*pi
+      if (nid.eq.0) then
+         open(unit=98,file='u2.txt')
+         read(98,*)      ! skip nelx, nely
+         read(98,*)      ! skip rhol, rhog, mul, mug
+         read(98,*)      ! skip f1acc, f2acc, gacc, sigma_sf
+         read(98,*) alpha
+         close(98)
+      else
+         alpha = 0.0
+      endif
+
+      call gop ( alpha , wk , '+  ', 1 )
+
+      xlength = 2*pi/alpha
       call rescale_x (xm1,0.0,xlength)
 
       do iel=1,nelt

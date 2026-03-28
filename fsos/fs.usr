@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
           vtrans0(ix,iy,iz,e) = utrans
         else
           vtrans0(ix,iy,iz,e) = utrans
-c         vtrans0(ix,iy,iz,e) = rhog/rhol
+          vtrans0(ix,iy,iz,e) = rhog/rhol
         endif
       else
         utrans = 1.0
@@ -224,8 +224,6 @@ c-----------------------------------------------------------------------
       integer ncut
 
       integer nface, f, e
-      real bfluid(lx1*ly1*lz1*lelt)
-      real psifluid(lx1,ly1,lz1,lelv)
       real pr_avg
 
       real vol, vy2, vy20, gr, gl, ge, vy2r, vy2l,timestart
@@ -255,30 +253,21 @@ c-----------------------------------------------------------------------
       endif
 
       ! Calculate growth rate
-      call copy(psifluid,t,ntot)
-c     do i=1,ntot
-c         if(ym1(i,1,1,1).lt.-0.5)then
-c           psifluid(i,1,1,1) = 1.0
-c         else
-c           psifluid(i,1,1,1) = 0.0
-c         endif
-c     enddo
-      call col3(bfluid, bm1, psifluid, ntot)
-      vol = glsum(bfluid,ntot)
-      vy2 = glsc3(vy,bfluid,vy,ntot)/vol
+      vol = glsum(bm1,ntot)
+      vy2 = glsc3(vy,bm1,vy,ntot)/vol
 
       if (vy2.gt.0.0) vy2 = sqrt(vy2)
 
-      if (istep.le.20) then
+      if (istep.le.50) then
          vy2r = vy2/vy20
          vy2l = vy2/vy2l
          gr = log(vy2r)/(time-timestart)
          gl = log(vy2l)/dt
          ge = abs(gr - gamma_r)/gamma_r
+         vy20 = vy2
+         timestart=time
          if (istep.ge.2) then
             if (nid.eq.0) write(6,1) istep,time,vol,gr,gl,ge
-            vy20 = vy2
-            timestart=time
          endif
       else
          vy2r = vy2/vy20
@@ -334,6 +323,9 @@ c-----------------------------------------------------------------------
       real xx, yy
       real xlength
       real alpha
+
+      common /scruz/ wk(ly1,1000)
+      real wk
 
       ifld_cls = 2
       ifld_tls = 3

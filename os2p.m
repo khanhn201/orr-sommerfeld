@@ -7,15 +7,15 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 50;
+N = 200;
 
-rhos = [1, 1e-3];
-mus = [1/3e4, 1/3e4*1e-3];
-sigmas = 0.06;
-sigmas = mus(1)/0.07;
-% sigmas = 0.0;
-g = 9.81;
-g = 8.3e7*mus(1)^2/rhos(1)^2;
+% rhos = [1, 1e-3];
+% mus = [1/3e4, 1/3e4*1e-3];
+% sigmas = 0.06;
+% sigmas = mus(1)/0.07;
+% % sigmas = 0.0;
+% g = 9.81;
+% g = 8.3e7*mus(1)^2/rhos(1)^2;
 
 % rhos = [1, 1e-3];
 % mus = [1/8e3, 1/8e3*1e-3];
@@ -31,26 +31,42 @@ g = 8.3e7*mus(1)^2/rhos(1)^2;
 % sigmas = mus(1)/0.07;
 % % g = 1e6*mus(1)^2/rhos(1)^2;
 % g = 8.3e7*mus(1)^2/rhos(1)^2*1e-3;
+rhos = [1, 1e-3];
+mus = [1/8e3, 1/8e3*1e-3];
+sigmas = mus(1)/0.2;
+g = 1e6*mus(1)^2/rhos(1)^2;
+alpha = 1.0
 
+% rhos = [1, 1e-3];
+% mus = [1/3e4, 1/3e4*1e-3];
+% sigmas = mus(1)/0.07;
+% g = 8.3e7*mus(1)^2/rhos(1)^2;
+% alpha = 0.9502
 
 h = 1; % Height of the air domain
 mode = 1; % Which of the unstable modes to output
 top_bc = 'W'
 accel_type = 'S'
 
-alphas = linspace(0.9, 1, 100);
-growth = zeros(size(alphas));
-all_growth = [];
+% alphas = linspace(0.9, 1.1, 100);
+% growth = zeros(size(alphas));
+% all_growth = [];
+% for k = 1:length(alphas)
+%     alpha = alphas(k)
+%     [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, g, h, top_bc, accel_type);
+%     c = gamma*1i/alpha;
+%     lambda = alpha*c;
+%     growth(k) = max(imag(lambda));
+% end
+% plot(alphas, growth);
 
-for k = 1:length(alphas)
-    alpha = alphas(k)
-    [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, g, h, top_bc, accel_type);
-    c = gamma*1i/alpha;
-    lambda = alpha*c;
-    growth(k) = max(imag(lambda));
-end
 
-plot(alphas, growth);
+
+
+
+[xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, g, h, top_bc, accel_type);
+c = gamma*1i/alpha;
+lambda = alpha*c;
 
 
 % figure;
@@ -71,20 +87,20 @@ plot(alphas, growth);
 
 N
 
-% unstable = find(imag(c) > 0.0);
-% c_unstable = c(unstable)
-% unstable = unstable(mode);
-% a = amat(unstable)
-% v = vmat(:, unstable);
-% u = umat(:, unstable);
-% v = reshape(v, [N+1, 2]);
-% u = reshape(u, [N+1, 2]);
-% figure;
-% plot(abs(v), xs', 'linewidth', 2)
-% title('V')
-% figure;
-% plot(abs(u), xs', 'linewidth', 2);
-% title('U')
+unstable = find(imag(c) > 0.0);
+c_unstable = c(unstable)
+unstable = unstable(mode);
+a = amat(unstable)
+v = vmat(:, unstable);
+u = umat(:, unstable);
+v = reshape(v, [N+1, 2]);
+u = reshape(u, [N+1, 2]);
+figure;
+plot(abs(v), xs', 'linewidth', 2)
+title('V')
+figure;
+plot(abs(u), xs', 'linewidth', 2);
+title('U')
 
 
 % figure; hold on;
@@ -99,7 +115,7 @@ N
 % plot([0, 1], [-1,-1], '-b', 'linewidth', 4);
 
 % Interpolate to Nek mesh
-nely = 40; % Nely in 1 phase; must be divisible by 2 for geometric
+nely = 20; % Nely in 1 phase; must be divisible by 2 for geometric
 nelx = -30;
 Nf = 8; % lx1
 el_ratio = 16.0000;

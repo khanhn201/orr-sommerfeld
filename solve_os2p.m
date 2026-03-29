@@ -1,4 +1,4 @@
-function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, h, top_bc, accel_type, Bx, Bz)
+function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, st, g, h, top_bc, accel_type, Bx, Bz)
   if top_bc == 'W'
       if accel_type == 'S' % same acceleration on both domains
           f = 2*(mus(2) + mus(1)*h)/(rhos(1)*h + rhos(2)*h^2);
@@ -40,6 +40,7 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, 
   for e = 1:Nelem
       rho = rhos(e);
       mu = mus(e);
+      sigma = sigmas(e);
 
       if e == 1
           x = (z-1.0)/2; % x = [-1, 0]
@@ -80,7 +81,8 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, 
                       +Dh'*Bh*diag(U)*Dh...
                       -Dh'*Bh*diag(DU));
       KuuS = -alpha^2*mu*(Dh'*Sh + Sh*Dh);
-      Kuu = Kuu0 + KuuU + KuuS;
+      KuuB = sigma*(-Bx^2*alpha^2*Bh + Bx*Bz*1i*alpha*(Bh*Dh - Dh'*Bh) - Bz^2*Dh'*Bh*Dh);
+      Kuu = Kuu0 + KuuU + KuuS + KuuB;
 
       Kua = -alpha^2*S*rho*g...
             -0.5*abs(S)*alpha^4*st... % 0.5 to counter multiplicity
@@ -129,11 +131,11 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, 
   amat = vecs(end, :);
   vmat = T_block*Q*R'*vecs(1:end-1, :);
   umat = 1i/alpha*D_block*vmat;
-  test_error(alpha, N, rhos, mus, st, g, umat, vmat, amat, gamma, U1, U2, Dh);
+  test_error(alpha, N, rhos, mus, sigmas, st, g, umat, vmat, amat, gamma, Bx, Bz, U1, U2, Dh);
 end
 
-function test_error(alpha, N, rhos, mus, st, g, umat, vmat, amat, gamma_temp, U1, U2, Dh)
-  unstable = find(real(gamma_temp) > 0.0);
+function test_error(alpha, N, rhos, mus, sigmas, st, g, umat, vmat, amat, gamma_temp, Bx, Bz, U1, U2, Dh)
+  unstable = find(real(gamma_temp) > -1e-1);
   v1 = vmat(1:N+1,unstable);
   v2 = vmat(N+2:end,unstable);
   DU1 = Dh*U1;
@@ -159,7 +161,11 @@ function test_error(alpha, N, rhos, mus, st, g, umat, vmat, amat, gamma_temp, U1
                        + 3*mus(1)*Dv1(end, :) - 3*mus(2)*Dv2(1, :)...
                        + rhos(1)*DU1(end)/1i/alpha*v1(end,:)...
                        - rhos(2)*DU2(1)/1i/alpha*v2(1,:)...
+                       + sigmas(1)/alpha^2*Bz^2*Dv1(end,:)...
+                       - sigmas(2)/alpha^2*Bz^2*Dv2(1,:)...
+                       - sigmas(1)/1i/alpha*Bz*Bx*v1(end,:)...
+                       - sigmas(2)/1i/alpha*Bz*Bx*v2(1,:)...
                        + st*alpha^2*a
-
   kinematic_error = v1(end, :) - (gamma + 1i*alpha*U1(end)).*a
+  
 end

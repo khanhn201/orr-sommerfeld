@@ -7,22 +7,31 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 50;
+N = 250;
 
-rhos = [1, 1e-3];
-mus = [1/8e3, 1/8e3*1e-3];
-st = mus(1)/0.2; % surface tension
-g = 1e6*mus(1)^2/rhos(1)^2;
-alpha = 1.0
+
+Re = 3e4;
+Hz = 14.0;
+ratio = 1e8;
+Ca = 0.07;
+Ga = 8.3e7;
+
+rhos = [1, 1/ratio];
+mus = [1/Re, 1/Re/ratio];
+% sigmas = [1/(mu_mag/Re*Pm), 1/(mu_mag/Re*Pm)/ratio];
+sigmas = [1/1, 1/1/ratio];
+st = mus(1)/Ca; % surface tension
+g = Ga*mus(1)^2/rhos(1)^2;
+alpha = 1;
 
 h = 1; % Height of the air domain
 mode = 1; % Which of the unstable modes to output
-top_bc = 'W'
-accel_type = 'S'
+top_bc = 'W';
+accel_type = 'S';
+Bz = Hz;
 Bx = 0;
-Bz = 0;
 
-[xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, h, top_bc, accel_type, Bx, Bz);
+[xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, st, g, h, top_bc, accel_type, Bx, Bz);
 c = gamma*1i/alpha;
 lambda = alpha*c;
 
@@ -45,7 +54,8 @@ lambda = alpha*c;
 
 N
 
-unstable = find(imag(c) > 0.0);
+% unstable = find(imag(c) > 0.0);
+unstable = find(real(gamma) > -1e-1);
 c_unstable = c(unstable)
 unstable = unstable(mode);
 a = amat(unstable)

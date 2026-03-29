@@ -7,64 +7,22 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 200;
+N = 50;
 
-% rhos = [1, 1e-3];
-% mus = [1/3e4, 1/3e4*1e-3];
-% sigmas = 0.06;
-% sigmas = mus(1)/0.07;
-% % sigmas = 0.0;
-% g = 9.81;
-% g = 8.3e7*mus(1)^2/rhos(1)^2;
-
-% rhos = [1, 1e-3];
-% mus = [1/8e3, 1/8e3*1e-3];
-% sigmas = mus(1)/0.2;
-% g = 1e6*mus(1)^2/rhos(1)^2;
-%
-% alpha = 1;
-% h = 1; % Height of the air domain
-% mode = 1; % Which of the unstable modes to output
-
-% rhos = [1, 1e-3];
-% mus = [1/9772, 1/9772*1e-3];
-% sigmas = mus(1)/0.07;
-% % g = 1e6*mus(1)^2/rhos(1)^2;
-% g = 8.3e7*mus(1)^2/rhos(1)^2*1e-3;
 rhos = [1, 1e-3];
 mus = [1/8e3, 1/8e3*1e-3];
-sigmas = mus(1)/0.2;
+st = mus(1)/0.2; % surface tension
 g = 1e6*mus(1)^2/rhos(1)^2;
 alpha = 1.0
-
-% rhos = [1, 1e-3];
-% mus = [1/3e4, 1/3e4*1e-3];
-% sigmas = mus(1)/0.07;
-% g = 8.3e7*mus(1)^2/rhos(1)^2;
-% alpha = 0.9502
 
 h = 1; % Height of the air domain
 mode = 1; % Which of the unstable modes to output
 top_bc = 'W'
 accel_type = 'S'
+Bx = 0;
+Bz = 0;
 
-% alphas = linspace(0.9, 1.1, 100);
-% growth = zeros(size(alphas));
-% all_growth = [];
-% for k = 1:length(alphas)
-%     alpha = alphas(k)
-%     [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, g, h, top_bc, accel_type);
-%     c = gamma*1i/alpha;
-%     lambda = alpha*c;
-%     growth(k) = max(imag(lambda));
-% end
-% plot(alphas, growth);
-
-
-
-
-
-[xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, g, h, top_bc, accel_type);
+[xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, h, top_bc, accel_type, Bx, Bz);
 c = gamma*1i/alpha;
 lambda = alpha*c;
 
@@ -95,12 +53,12 @@ v = vmat(:, unstable);
 u = umat(:, unstable);
 v = reshape(v, [N+1, 2]);
 u = reshape(u, [N+1, 2]);
-figure;
-plot(abs(v), xs', 'linewidth', 2)
-title('V')
-figure;
-plot(abs(u), xs', 'linewidth', 2);
-title('U')
+% figure;
+% plot(abs(v), xs', 'linewidth', 2)
+% title('V')
+% figure;
+% plot(abs(u), xs', 'linewidth', 2);
+% title('U')
 
 
 % figure; hold on;
@@ -148,7 +106,7 @@ data = [real(uf), imag(uf), real(vf), imag(vf)];
 fid = fopen("u2.txt", "w");
 fprintf(fid, "%d  %d  ! nelx, nely\n", -nelx, nely*2);
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! rhol, rhog, mul, mug\n", rhos(1), rhos(2), mus(1), mus(2));
-fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! f1, f2, g, sigma\n", f, f*r, g, sigmas);
+fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! f1, f2, g, st\n", f, f*r, g, st);
 fprintf(fid, "% .16e  ! alpha\n", alpha);
 fprintf(fid, "% .16e  % .16e  ! gamma\n", real(gamma(unstable)), imag(gamma(unstable)));
 fprintf(fid, "% .16e  % .16e  ! a\n", real(a), imag(a));

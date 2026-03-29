@@ -1,4 +1,4 @@
-function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, g, h, top_bc, accel_type)
+function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, h, top_bc, accel_type, Bx, Bz)
   if top_bc == 'W'
       if accel_type == 'S' % same acceleration on both domains
           f = 2*(mus(2) + mus(1)*h)/(rhos(1)*h + rhos(2)*h^2);
@@ -44,11 +44,13 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
       if e == 1
           x = (z-1.0)/2; % x = [-1, 0]
           U = 1.0 + (1-f/2*rho/mu)*x - (f/2*rho/mu)*x.^2;
+          U1 = U;
           Dh = 2*Dhh;
           Bh = 1/2*Bhh;
       else
           x = (z+1.0)/2*h; % x = [0, h]
           U = 1.0 + (mus(1)/mu - f/2*rhos(1)/mu)*x - (r*f/2*rho/mu)*x.^2;
+          U2 = U;
           Dh = 2/h*Dhh;
           Bh = h/2*Bhh;
       end
@@ -65,13 +67,11 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
       D2U = Dh * DU;
 
       if e == 1
-          S = 0*(1:nh); S(end) = 1;
-          Sh = diag(S);
           S = zeros(nh,1); S(end,1) = 1;
-      else
-          S = 0*(1:nh); S(1) = -1;
           Sh = diag(S);
+      else
           S = zeros(nh,1); S(1,1) = -1;
+          Sh = diag(S);
       end
       Kuu0 = -mu*Dh'*Dh'*Bh*Dh*Dh...
              -mu*2*alpha^2*Dh'*Bh*Dh...
@@ -83,7 +83,7 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
       Kuu = Kuu0 + KuuU + KuuS;
 
       Kua = -alpha^2*S*rho*g...
-            -0.5*abs(S)*alpha^4*sigmas... % 0.5 to counter multiplicity
+            -0.5*abs(S)*alpha^4*st... % 0.5 to counter multiplicity
             +1i*alpha*mu*Dh'*Sh*D2U;
       Kau = 0.5*abs(S');  % 0.5 to counter multiplicity
 
@@ -96,8 +96,6 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
       T_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = T;
       D_block((e-1)*(N+1)+1:e*(N+1), (e-1)*(N+1)+1:e*(N+1)) = Dh;
   end
-  % figure;
-  % plot(Uplot, Uxplot, 'linewidth', 2);
 
 
   Ih = speye(Ng); 
@@ -123,6 +121,7 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
     zeros(1, Nelem*nh)*Q*R', 1;
   ];
 
+
   [vecs, gamma] = eig(K, M, 'vector');
   for k = 1:size(vecs,2)
     vecs(:,k) = vecs(:,k) / abs(vecs(end,k));
@@ -130,3 +129,37 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
   amat = vecs(end, :);
   vmat = T_block*Q*R'*vecs(1:end-1, :);
   umat = 1i/alpha*D_block*vmat;
+  test_error(alpha, N, rhos, mus, st, g, umat, vmat, amat, gamma, U1, U2, Dh);
+end
+
+function test_error(alpha, N, rhos, mus, st, g, umat, vmat, amat, gamma_temp, U1, U2, Dh)
+  unstable = find(real(gamma_temp) > 0.0);
+  v1 = vmat(1:N+1,unstable);
+  v2 = vmat(N+2:end,unstable);
+  DU1 = Dh*U1;
+  DU2 = Dh*U2;
+  D2U1 = Dh*DU1;
+  D2U2 = Dh*DU2;
+  D2v1 = Dh*Dh*v1;
+  D2v2 = Dh*Dh*v2;
+  Dv1 = Dh*v1;
+  Dv2 = Dh*v2;
+  D3v1 = Dh*Dh*Dv1;
+  D3v2 = Dh*Dh*Dv2;
+  a = amat(unstable);
+  gamma = gamma_temp(unstable).';
+
+  shear_stress_error = (mus(1)*D2U1(end)-mus(2)*D2U2(1))*a...
+                       + mus(1)*1i*alpha*v1(end, :) - mus(2)*1i*alpha*v2(1, :)...
+                       - mus(1)/1i/alpha*D2v1(end, :) + mus(2)/1i/alpha*D2v2(1, :)
+  normal_stress_error = (rhos(1)-rhos(2))*g*a...
+                       + rhos(1)*(gamma/alpha^2 - U1(end)/1i/alpha).*Dv1(end, :)...
+                       - rhos(2)*(gamma/alpha^2 - U2(1)/1i/alpha).*Dv2(1, :)...
+                       - mus(1)/alpha^2*D3v1(end, :) + mus(2)/alpha^2*D3v2(1, :)...
+                       + 3*mus(1)*Dv1(end, :) - 3*mus(2)*Dv2(1, :)...
+                       + rhos(1)*DU1(end)/1i/alpha*v1(end,:)...
+                       - rhos(2)*DU2(1)/1i/alpha*v2(1,:)...
+                       + st*alpha^2*a
+
+  kinematic_error = v1(end, :) - (gamma + 1i*alpha*U1(end)).*a
+end

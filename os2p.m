@@ -7,37 +7,37 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 250;
+N = 150;
 
 
 Re = 3e4;
-Hz = 14.0;
-ratio = 1e8;
+ratio = 1e4;
 Ca = 0.07;
 Ga = 8.3e7;
 
 rhos = [1, 1/ratio];
 mus = [1/Re, 1/Re/ratio];
 % sigmas = [1/(mu_mag/Re*Pm), 1/(mu_mag/Re*Pm)/ratio];
-sigmas = [1/1, 1/1/ratio];
+sigmas = [1/1, 1/1/ratio]*1/Re;
 st = mus(1)/Ca; % surface tension
 g = Ga*mus(1)^2/rhos(1)^2;
-alpha = 1;
+alpha = 1.0;
+
+Bz = 14.0;
+Bx = 0.0;
 
 h = 1; % Height of the air domain
 mode = 1; % Which of the unstable modes to output
 top_bc = 'W';
 accel_type = 'S';
-Bz = Hz;
-Bx = 0;
 
 [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, st, g, h, top_bc, accel_type, Bx, Bz);
 c = gamma*1i/alpha;
 lambda = alpha*c;
 
 
-% figure;
-% plot(real(c), imag(c), 'xr', "markersize", 15); hold on;
+figure;
+plot(real(c), imag(c), '.b', "markersize", 15); hold on;
 % A = load("giannakis_rosner.dat");
 % x = A(:,1);
 % y = A(:,2);
@@ -45,14 +45,12 @@ lambda = alpha*c;
 % legend("Density ratio = 10", "Giannakis 2009")
 % xlabel('Im(gamma)');
 % ylabel('Re(gamma)');
-% xlim([-0.2, 1.5]);
-% ylim([-0.00, 0.01]);
-% grid on;
+xlim([-1, 2]);
+ylim([-2.00, 0]);
+grid on;
 %
 %
 % asdfzcxvxcv
-
-N
 
 % unstable = find(imag(c) > 0.0);
 unstable = find(real(gamma) > -1e-1);

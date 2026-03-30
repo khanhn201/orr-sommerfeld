@@ -44,13 +44,13 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
 
       if e == 1
           x = (z-1.0)/2; % x = [-1, 0]
-          U = 1.0 + (1-f/2*rho/mu)*x - (f/2*rho/mu)*x.^2;
+          U = (cosh(Bz)-cosh(Bz*x))/(cosh(Bz)-1);
           U1 = U;
           Dh = 2*Dhh;
           Bh = 1/2*Bhh;
       else
           x = (z+1.0)/2*h; % x = [0, h]
-          U = 1.0 + (mus(1)/mu - f/2*rhos(1)/mu)*x - (r*f/2*rho/mu)*x.^2;
+          U = (cosh(Bz)-cosh(Bz*x))/(cosh(Bz)-1);
           U2 = U;
           Dh = 2/h*Dhh;
           Bh = h/2*Bhh;

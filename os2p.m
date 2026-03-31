@@ -11,7 +11,7 @@ N = 150;
 
 
 Re = 3e4;
-ratio = 1e4;
+ratio = 1e3;
 Ca = 0.07;
 Ga = 8.3e7;
 
@@ -31,13 +31,14 @@ mode = 1; % Which of the unstable modes to output
 top_bc = 'W';
 accel_type = 'S';
 
-[xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, st, g, h, top_bc, accel_type, Bx, Bz);
-c = gamma*1i/alpha;
-lambda = alpha*c;
-
-
-figure;
-plot(real(c), imag(c), '.b', "markersize", 15); hold on;
+% [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, st, g, h, top_bc, accel_type, Bx, Bz);
+[xs,umat,vmat,amat,gamma,f] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
+% c = gamma*1i/alpha;
+% lambda = alpha*c;
+%
+%
+% figure;
+% plot(real(c), imag(c), '.b', "markersize", 15); hold on;
 % A = load("giannakis_rosner.dat");
 % x = A(:,1);
 % y = A(:,2);
@@ -45,22 +46,22 @@ plot(real(c), imag(c), '.b', "markersize", 15); hold on;
 % legend("Density ratio = 10", "Giannakis 2009")
 % xlabel('Im(gamma)');
 % ylabel('Re(gamma)');
-xlim([-1, 2]);
-ylim([-2.00, 0]);
-grid on;
+% xlim([-1, 2]);
+% ylim([-2.00, 0]);
+% grid on;
 %
 %
 % asdfzcxvxcv
 
 % unstable = find(imag(c) > 0.0);
-unstable = find(real(gamma) > -1e-1);
-c_unstable = c(unstable)
-unstable = unstable(mode);
-a = amat(unstable)
-v = vmat(:, unstable);
-u = umat(:, unstable);
-v = reshape(v, [N+1, 2]);
-u = reshape(u, [N+1, 2]);
+% unstable = find(real(gamma) > -1e-1);
+% c_unstable = c(unstable)
+% unstable = unstable(mode);
+% a = amat(unstable)
+% v = vmat(:, unstable);
+% u = umat(:, unstable);
+% v = reshape(v, [N+1, 2]);
+% u = reshape(u, [N+1, 2]);
 % figure;
 % plot(abs(v), xs', 'linewidth', 2)
 % title('V')

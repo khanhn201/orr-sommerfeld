@@ -1,29 +1,20 @@
-function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas, st, g, h, top_bc, accel_type, Bx, Bz)
-  if top_bc == 'W'
-      if accel_type == 'S' % same acceleration on both domains
-          f = 2*(mus(2) + mus(1)*h)/(rhos(1)*h + rhos(2)*h^2);
-          r = 1.0;
-      elseif accel_type == 'F' % Prescribed accel on fluid; ratio is computed correspondingly
-          f = mus(1)/rhos(1)*2;
-          r = (2*(mus(2)+mus(1)*h)/f-rhos(1)*h)/(h^2*rhos(2));
-      else % Prescribed f2/f1 ratio
-          r = 1/h;
-          f = 2*(mus(2)+mus(1)*h)/(r*(h^2*rhos(2)) + rhos(1)*h);
-      end
-  else % Symmetry top bc
-      if accel_type == 'S' % same acceleration on both domains
-          f = mus(1)/(rhos(2)*h + rhos(1)/2)
-          r = 1.0
-      elseif accel_type == 'F' % Prescribed accel on fluid; ratio is computed correspondingly
-          f = mus(1)/rhos(1)*2;
-          r = 0.0;
-      else % Prescribed f2/f1 ratio
-          r = 1/h;
-          f = mus(1)/mus(2)/(rhos(1)/mus(2)/2 + h*r*rhos(2)/mus(2));
-      end
-  end
-
+function [xs,umat,vmat,amat,gamma,f] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz)
   [Ah,Bhh,Ch,Dhh,z,w] = semhat(N);
+
+  k1 = sqrt(sigmas(1)/mus(1))*Bz;
+  k2 = sqrt(sigmas(2)/mus(2))*Bz;
+  rat = sqrt(sigmas(1)*mus(1)/sigmas(2)/mus(2));
+  f = Bz^2/(...
+      rhos(1)/sigmas(1)...
+      -(rhos(2)/sigmas(2) + rat*rhos(1)/sigmas(1)/sinh(k1)*sinh(k2) + (rhos(1)/sigmas(1) - rhos(2)/sigmas(2))*cosh(k2))...
+      /(cosh(k2) + rat*coth(k1)*sinh(k2))...
+  );
+  A1 = f/Bz^2*(-rhos(2)/sigmas(2) - rat*rhos(1)/sigmas(1)/sinh(k1)*sinh(k2) - (rhos(1)/sigmas(1)-rhos(2)/sigmas(2))*cosh(k2))...
+        /(cosh(k2) + rat*coth(k1)*sinh(k2));
+  A2 = (f*rhos(1)/sigmas(1)/Bz^2 + A1*cosh(k1))/sinh(k1);
+  A3 = A1 + f/Bz^2*(rhos(1)/sigmas(1) - rhos(2)/sigmas(2));
+  A4 = rat*A2;
+
 
   Nelem = 2;
   nh = N + 1;
@@ -44,16 +35,20 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
 
       if e == 1
           x = (z-1.0)/2; % x = [-1, 0]
-          U = (cosh(Bz)-cosh(Bz*x))/(cosh(Bz)-1);
+          U = A1*cosh(k1*x) + A2*sinh(k1*x) + f*rho/sigma/Bz^2;
           U1 = U;
           Dh = 2*Dhh;
           Bh = 1/2*Bhh;
+          plot(x, U);
+          hold on;
       else
-          x = (z+1.0)/2*h; % x = [0, h]
-          U = (cosh(Bz)-cosh(Bz*x))/(cosh(Bz)-1);
+          x = (z+1.0)/2; % x = [0, 1]
+          U = A3*cosh(k2*x) + A4*sinh(k2*x) + f*rho/sigma/Bz^2;
           U2 = U;
-          Dh = 2/h*Dhh;
-          Bh = h/2*Bhh;
+          Dh = 2*Dhh;
+          Bh = 1/2*Bhh;
+          plot(x, U);
+          A1, A2, A3, A4
       end
       T = speye(nh);
       T(2, :) = Dh(1,:);
@@ -101,12 +96,7 @@ function [xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, sigmas,
 
 
   Ih = speye(Ng); 
-  if top_bc == 'W'
-      R=Ih(3:end-2,:);
-  else
-      R=Ih(3:end-1,:);
-      R(end, :) = Ih(end,:);
-  end
+  R=Ih(3:end-2,:);
 
 
   Kuu_global = R*Q'*Kuu_block*Q*R';

@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
           vtrans0(ix,iy,iz,e) = utrans
         else
           vtrans0(ix,iy,iz,e) = utrans
-          vtrans0(ix,iy,iz,e) = rhog/rhol
+c         vtrans0(ix,iy,iz,e) = rhog/rhol
         endif
       else
         utrans = 1.0
@@ -224,11 +224,19 @@ c-----------------------------------------------------------------------
       integer ncut
 
       integer nface, f, e
+      real bfluid(lx1*ly1*lz1*lelt)
+      real psifluid(lx1,ly1,lz1,lelv)
       real pr_avg
 
       real vol, vy2, vy20, gr, gl, ge, vy2r, vy2l,timestart
+      real gle
+      real vf20, vf2l, vg20, vg2l, vf2, vg2
+      real gfr, gfl, gfe, gfle
+      real ggr, ggl, gge, ggle
+      real vf2r, vg2r
 
       save vy20, vy2l, timestart
+      save vf20, vf2l, vg20, vg2l
 
       common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
       common /fstemp/ temp_ic(lx1,ly1,lz1,lelv,2)
@@ -256,29 +264,60 @@ c-----------------------------------------------------------------------
       vol = glsum(bm1,ntot)
       vy2 = glsc3(vy,bm1,vy,ntot)/vol
 
+      call copy(psifluid,t,ntot)
+      call col3(bfluid, bm1, psifluid, ntot)
+      vol = glsum(bfluid,ntot)
+      vf2 = glsc3(vy,bfluid,vy,ntot)/vol
+      
+      do i=1,ntot
+        psifluid(i,1,1,1) = 1.0-psifluid(i,1,1,1)
+      enddo
+      call col3(bfluid, bm1, psifluid, ntot)
+      vol = glsum(bfluid,ntot)
+      vg2 = glsc3(vy,bfluid,vy,ntot)/vol
+
       if (vy2.gt.0.0) vy2 = sqrt(vy2)
+      if (vg2.gt.0.0) vg2 = sqrt(vg2)
+      if (vf2.gt.0.0) vf2 = sqrt(vf2)
+
+      vy2r = vy2/vy20
+      vy2l = vy2/vy2l
+      gr = log(vy2r)/(time-timestart)
+      gl = log(vy2l)/dt
+      ge = abs(gr - gamma_r)/gamma_r
+      gle = abs(gl - gamma_r)/gamma_r
+
+      vf2r = vf2/vf20
+      vf2l = vf2/vf2l
+      gfr = log(vf2r)/(time-timestart)
+      gfl = log(vf2l)/dt
+      gfe = abs(gfr - gamma_r)/gamma_r
+      gfle = abs(gfl - gamma_r)/gamma_r
+
+      vg2r = vg2/vg20
+      vg2l = vg2/vg2l
+      ggr = log(vg2r)/(time-timestart)
+      ggl = log(vg2l)/dt
+      gge = abs(ggr - gamma_r)/gamma_r
+      ggle = abs(ggl - gamma_r)/gamma_r
 
       if (istep.le.50) then
-         vy2r = vy2/vy20
-         vy2l = vy2/vy2l
-         gr = log(vy2r)/(time-timestart)
-         gl = log(vy2l)/dt
-         ge = abs(gr - gamma_r)/gamma_r
          vy20 = vy2
+         vg20 = vg2
+         vf20 = vf2
          timestart=time
-         if (istep.ge.2) then
-            if (nid.eq.0) write(6,1) istep,time,vol,gr,gl,ge
-         endif
-      else
-         vy2r = vy2/vy20
-         vy2l = vy2/vy2l
-         gr = log(vy2r)/(time-timestart)
-         gl = log(vy2l)/dt
-         ge = abs(gr - gamma_r)/gamma_r
-         if (nid.eq.0) write(6,1) istep,time,vol,gr,gl,ge
-    1    format(i8,1p5e15.7,' AMP')
+      endif
+      if (istep.ge.2) then
+         if (nid.eq.0) write(6,1) istep,time,gl,gr,gle,ge
+    1    format(i8,1p5e15.7,' AMPall')
+         if (nid.eq.0) write(6,2) istep,time,gfl,gfr,gfle,gfe
+    2    format(i8,1p5e15.7,' AMPfluid')
+         if (nid.eq.0) write(6,3) istep,time,ggl,ggr,ggle,gge
+    3    format(i8,1p5e15.7,' AMPgas')
       endif
       vy2l = vy2
+      vf2l = vf2
+      vg2l = vg2
 
 
 
@@ -322,10 +361,6 @@ c-----------------------------------------------------------------------
       integer ntot,i, iface, iel
       real xx, yy
       real xlength
-      real alpha
-
-      common /scruz/ wk(ly1,1000)
-      real wk
 
       ifld_cls = 2
       ifld_tls = 3
@@ -334,20 +369,7 @@ c-----------------------------------------------------------------------
       
       ntot = lx1*ly1*lz1*nelt
 
-      if (nid.eq.0) then
-         open(unit=98,file='u2.txt')
-         read(98,*)      ! skip nelx, nely
-         read(98,*)      ! skip rhol, rhog, mul, mug
-         read(98,*)      ! skip f1acc, f2acc, gacc, sigma_sf
-         read(98,*) alpha
-         close(98)
-      else
-         alpha = 0.0
-      endif
-
-      call gop ( alpha , wk , '+  ', 1 )
-
-      xlength = 2*pi/alpha
+      xlength = 2*pi
       call rescale_x (xm1,0.0,xlength)
 
       do iel=1,nelt
@@ -382,7 +404,7 @@ c-----------------------------------------------------------------------
       integer ifdebug, ifixCLSbdry
       real farfield
 
-      eps = 1.5/(lx1-1.0)/6.0
+      eps = 1.5/(lx1-1.0)/uparam(4)
       ifdebug = 0
       ifixCLSbdry = 0
       farfield = 0.0

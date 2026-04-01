@@ -17,43 +17,40 @@ Ga = 8.3e7;
 
 rhos = [1, 1/ratio];
 mus = [1/Re, 1/Re/ratio];
-% sigmas = [1/(mu_mag/Re*Pm), 1/(mu_mag/Re*Pm)/ratio];
 sigmas = [1/1, 1/1/ratio]*1/Re;
 st = mus(1)/Ca; % surface tension
 g = Ga*mus(1)^2/rhos(1)^2;
 alpha = 1.13;
+
+Bz = 5.0;
+Bx = 0.0;
 
 h = 1; % Height of the air domain
 mode = 1; % Which of the unstable modes to output
 top_bc = 'W';
 accel_type = 'S';
 
-[xs,umat,vmat,amat,gamma,f,r] = solve_os2p(alpha, N, rhos, mus, st, g, h, top_bc, accel_type);
+[xs,umat,vmat,amat,gamma,f,A] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
 c = gamma*1i/alpha;
 lambda = alpha*c;
-%
-%
-figure;
-plot(real(c), imag(c), '.b', "markersize", 15); hold on;
-% A = load("giannakis_rosner.dat");
-% x = A(:,1);
-% y = A(:,2);
-% plot(x, y, "ok", "markersize", 15)
-% legend("Density ratio = 10", "Giannakis 2009")
-% xlabel('Im(gamma)');
-% ylabel('Re(gamma)');
-xlim([-1, 2]);
-ylim([-2.00, 0]);
-grid on;
-%
-%
-% asdfzcxvxcv
 
-% unstable = find(imag(c) > -1e-2);
+
+% figure;
+% plot(real(c), imag(c), '.b', "markersize", 15); hold on;
+% % A = load("giannakis_rosner.dat");
+% % x = A(:,1);
+% % y = A(:,2);
+% % plot(x, y, "ok", "markersize", 15)
+% % legend("Density ratio = 10", "Giannakis 2009")
+% % xlabel('Im(gamma)');
+% % ylabel('Re(gamma)');
+% xlim([-1, 2]);
+% ylim([-2.00, 0]);
+% grid on;
+
+
 unstable = find(imag(c) > 0.0);
-% unstable = find(real(gamma) > -1e-1);
 c_unstable = c(unstable)
-% unstable = unstable(mode);
 a = amat(unstable);
 v = vmat(:, unstable);
 u = umat(:, unstable);
@@ -112,12 +109,13 @@ data = [real(uf), imag(uf), real(vf), imag(vf)];
 fid = fopen("u2.txt", "w");
 fprintf(fid, "%d  %d  ! nelx, nely\n", -nelx, nely*2);
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! rhol, rhog, mul, mug\n", rhos(1), rhos(2), mus(1), mus(2));
-fprintf(fid, "% .16e  % .16e  % .16e  % .16e  ! f1, f2, g, st\n", f, f*r, g, st);
+fprintf(fid, "% .16e  % .16e  ! sigmal, sigmag\n", sigmas(1), sigmas(2));
+fprintf(fid, "% .16e  % .16e  % .16e  % .16e  % .16e  ! f, g, st, Bx, Bz\n", f, g, st, Bx, Bz);
 fprintf(fid, "% .16e  ! alpha\n", alpha);
 fprintf(fid, "% .16e  % .16e  ! gamma\n", real(gamma(unstable)), imag(gamma(unstable)));
 fprintf(fid, "% .16e  % .16e  ! a\n", real(a), imag(a));
-fprintf(fid, "% .16e  % .16e  ! U1 = 1.0 + A*y + B*y^2\n", 1-f/2*rhos(1)/mus(1), -f/2*rhos(1)/mus(1)); % U profile in water
-fprintf(fid, "% .16e  % .16e  ! U2 = 1.0 + A*y + B*y^2\n", mus(1)/mus(2)-f/2*rhos(1)/mus(2),  -f*r/2*rhos(2)/mus(2)); % U profile in air
+fprintf(fid, "% .16e  % .16e  ! U1 = A*(cosh(k1*y)-1) + B*sinh(k1*y) + 1\n", A(1), A(2)); % U profile in water
+fprintf(fid, "% .16e  % .16e  ! U2 = A*(cosh(k2*y)-1) + B*sinh(k2*y) + 1\n", A(3), A(4)); % U profile in air
 fprintf(fid, "% .16e  % .16e  % .16e  % .16e\n", data.');
 fclose(fid);
 
@@ -128,7 +126,7 @@ el_pos_real(1:nely+1) = (el_pos - 1.0)/2.0;
 el_pos_real(nely+1:end) = (el_pos + 1.0)/2.0;
 fid = fopen("fs_g.box", "w");
 fprintf(fid, "-2\n");
-fprintf(fid, "5\n");
+fprintf(fid, "6\n");
 fprintf(fid, "Box\n");
 fprintf(fid, "%d %d\n", nelx, nely*2);
 fprintf(fid, "0 6.0 1.\n");
@@ -138,4 +136,6 @@ fprintf(fid, "P  ,P  ,I  ,I  \n");
 fprintf(fid, "P  ,P  ,I  ,I  \n");
 fprintf(fid, "P  ,P  ,I  ,I  \n");
 fprintf(fid, "P  ,P  ,I  ,I  \n");
+fprintf(fid, "P  ,P  ,I  ,I  \n");
 fclose(fid);
+

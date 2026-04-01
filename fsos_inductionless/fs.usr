@@ -1,0 +1,850 @@
+      include "experimental/lvlSet.f"
+      include "experimental/lserrors.f"
+c-----------------------------------------------------------------------
+      subroutine uservp(ix,iy,iz,eg) ! set variable properties
+      implicit none
+      integer ix,iy,iz,eg,e
+     
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /ls_usr/ ifld_cls,ifld_clsr,
+     $                ifld_tls,ifld_tlsr 
+      integer ifld_cls,ifld_clsr
+      integer ifld_tls,ifld_tlsr
+
+      common /fsos_usr/ rhol, rhog, mul, mug,
+     $                  facc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+
+      real psi, evm_getvisc
+      real Re
+
+      integer icalld
+      save icalld
+      data icalld /0/
+
+      e = gllel(eg)
+
+!     These routine is not called by external solver
+!     To Do: change the flow, so that this routine is called
+!     similar to RANS. Will avoid confusion
+
+      Re = rhol/mul
+
+      if(ifield.eq.1)then
+        psi = t(ix,iy,iz,e,ifld_cls-1)
+        psi = max(0.0,psi)
+        psi = min(1.0,psi)
+        utrans = ((1.0-psi)*rhog + psi*rhol)/rhol
+        udiff = ((1.0-psi)*mug + psi*mul)/mul/Re
+
+        if(istep.le.2)then
+          vtrans0(ix,iy,iz,e) = utrans
+        else
+          vtrans0(ix,iy,iz,e) = utrans
+c         vtrans0(ix,iy,iz,e) = rhog/rhol
+        endif
+      else
+        utrans = 1.0
+        udiff = 1e-10
+        if(ifavm(ifield-1))then
+          udiff = 1e-10       !must be tiny for hyperbolic
+        elseif(ifsvv(ifield-1))then
+          udiff = 1e-10      !must be tiny for hyperbolic
+        endif
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf(ix,iy,iz,eg) ! set acceleration term
+      implicit none
+      integer ix,iy,iz,eg,e
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /ls_usr/ ifld_cls,ifld_clsr,
+     $                ifld_tls,ifld_tlsr 
+      integer ifld_cls,ifld_clsr
+      integer ifld_tls,ifld_tlsr
+
+      common /fsos_usr/ rhol, rhog, mul, mug,
+     $                  facc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+
+      integer lxyz
+      parameter (lxyz=lx1*ly1*lz1)
+      common /indct/ phi(lxyz,lelt)
+     $ ,fx(lx1,ly1,lz1,lelt),fy(lx1,ly1,lz1,lelt),fz(lx1,ly1,lz1,lelt)
+      real phi, fx, fy, fz
+
+      real sfx,sfy,sfz
+      real fbx,fby,fbz
+      real svvx,svvy,svvz
+      real psi, fgrav, fflow
+
+
+      e = gllel(eg)
+
+      sfx = 0.0
+      sfy = 0.0
+      sfz = 0.0
+      svvx = 0.0
+      svvy = 0.0
+      svvz = 0.0
+
+      call surfacetension(ix,iy,iz,e,sigma_sf,sfx,sfy,sfz)
+      call svv_fluid(ix,iy,iz,e,svvx,svvy,svvz)
+
+      psi = t(ix,iy,iz,e,ifld_cls-1)
+
+      fgrav = vtrans(ix,iy,iz,e,1)*gacc
+      fflow = vtrans(ix,iy,iz,e,1)*facc
+
+      fbx = fx(ix,iy,iz,e)/vtrans(ix,iy,iz,e,1)
+      fby = fy(ix,iy,iz,e)/vtrans(ix,iy,iz,e,1)
+      fbz = fz(ix,iy,iz,e)/vtrans(ix,iy,iz,e,1)
+
+      ! explicit
+      sfx = sfx/vtrans(ix,iy,iz,e,1)
+      sfy = sfy/vtrans(ix,iy,iz,e,1)
+      sfz = sfz/vtrans(ix,iy,iz,e,1)
+      ffx = sfx + svvx + fflow/vtrans(ix,iy,iz,e,1) + fbx
+      ffy = sfy + svvy - fgrav/vtrans(ix,iy,iz,e,1) + fby
+      ffz = sfz + svvz + fbz
+      abfx(ix,iy,iz,e) = 0.0
+      abfy(ix,iy,iz,e) = 0.0
+      abfz(ix,iy,iz,e) = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq(ix,iy,iz,eg) ! set source term
+      implicit none
+      integer ix,iy,iz,eg,e
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      real signls
+
+      e = gllel(eg)
+      
+      qvol = 0.0
+      avol = 0.0
+
+      call limit_cls(ix,iy,iz,e)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc(ix,iy,iz,iside,eg) ! set up boundary conditions
+      implicit none
+      integer ix,iy,iz,iside,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e
+      real xx,yy
+
+      e = gllel(eg)
+
+      xx = xm1(ix,iy,iz,e)
+      yy = ym1(ix,iy,iz,e)
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric(ix,iy,iz,eg) ! set up initial conditions
+      implicit none
+      integer ix,iy,iz,eg,e
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /ls_usr/ ifld_cls,ifld_clsr,
+     $                ifld_tls,ifld_tlsr 
+      integer ifld_cls,ifld_clsr
+      integer ifld_tls,ifld_tlsr
+      real xx,yy, x_max
+
+      common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
+      real ub, vb
+      common /fstemp/ temp_ic(lx1,ly1,lz1,lelv,2)
+      real temp_ic
+      real fsr, fsi, ax, disp, heaviside, h_local
+
+      e = gllel(eg)
+
+      xx = xm1(ix,iy,iz,e)
+      yy = ym1(ix,iy,iz,e)
+
+      ux = ub(ix,iy,iz,e)
+      uy = vb(ix,iy,iz,e)
+      uz = 0.0
+
+      if(ifield.eq.2)then
+        temp = temp_ic(ix, iy, iz, e, 1)
+      endif
+      if(ifield.eq.3)then
+        temp = temp_ic(ix, iy, iz, e, 2)
+      endif
+      if(ifield.eq.4)then
+        temp = temp_ic(ix, iy, iz, e, 1)
+      endif
+      if(ifield.eq.5)then
+        temp = temp_ic(ix, iy, iz, e, 2)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk()
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      real ntlsr, nclsr
+
+      integer ntot,i
+
+      real glsum, glsc3, glsc2
+      integer pord
+      integer ncut
+
+      integer nface, f, e
+      real bfluid(lx1*ly1*lz1*lelt)
+      real psifluid(lx1,ly1,lz1,lelv)
+      real pr_avg
+
+      real vol, vy2, vy20, gr, gl, ge, vy2r, vy2l,timestart
+      real gle
+      real vf20, vf2l, vg20, vg2l, vf2, vg2
+      real gfr, gfl, gfe, gfle
+      real ggr, ggl, gge, ggle
+      real vf2r, vg2r
+
+      save vy20, vy2l, timestart
+      save vf20, vf2l, vg20, vg2l
+
+      common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
+      common /fstemp/ temp_ic(lx1,ly1,lz1,lelv,2)
+      common /fsparam/ eps,alpha,gamma_r,gamma_i
+      real ub, vb
+      real temp_ic, eps, alpha, gamma_r, gamma_i
+
+      ntot = lx1*ly1*lz1*nelv
+
+      ! Initialize the first 5 steps with the same IC
+      if (istep.lt.5) then
+        call gen_pert_ic
+        call copy(t(1,1,1,1,1),temp_ic(1,1,1,1,1),ntot)
+        call copy(t(1,1,1,1,3),temp_ic(1,1,1,1,1),ntot)
+        do i=1,ntot
+          vx(i,1,1,1) = ub(i,1,1,1)
+          vy(i,1,1,1) = vb(i,1,1,1)
+        enddo
+      endif
+
+      ! Calculate growth rate
+      vol = glsum(bm1,ntot)
+      vy2 = glsc3(vy,bm1,vy,ntot)/vol
+
+      call copy(psifluid,t,ntot)
+      call col3(bfluid, bm1, psifluid, ntot)
+      vol = glsum(bfluid,ntot)
+      vf2 = glsc3(vy,bfluid,vy,ntot)/vol
+      
+      do i=1,ntot
+        psifluid(i,1,1,1) = 1.0-psifluid(i,1,1,1)
+      enddo
+      call col3(bfluid, bm1, psifluid, ntot)
+      vol = glsum(bfluid,ntot)
+      vg2 = glsc3(vy,bfluid,vy,ntot)/vol
+
+      if (vy2.gt.0.0) vy2 = sqrt(vy2)
+      if (vg2.gt.0.0) vg2 = sqrt(vg2)
+      if (vf2.gt.0.0) vf2 = sqrt(vf2)
+
+      vy2r = vy2/vy20
+      vy2l = vy2/vy2l
+      gr = log(vy2r)/(time-timestart)
+      gl = log(vy2l)/dt
+      ge = abs(gr - gamma_r)/gamma_r
+      gle = abs(gl - gamma_r)/gamma_r
+
+      vf2r = vf2/vf20
+      vf2l = vf2/vf2l
+      gfr = log(vf2r)/(time-timestart)
+      gfl = log(vf2l)/dt
+      gfe = abs(gfr - gamma_r)/gamma_r
+      gfle = abs(gfl - gamma_r)/gamma_r
+
+      vg2r = vg2/vg20
+      vg2l = vg2/vg2l
+      ggr = log(vg2r)/(time-timestart)
+      ggl = log(vg2l)/dt
+      gge = abs(ggr - gamma_r)/gamma_r
+      ggle = abs(ggl - gamma_r)/gamma_r
+
+      if (istep.le.50) then
+         vy20 = vy2
+         vg20 = vg2
+         vf20 = vf2
+         timestart=time
+      endif
+      if (istep.ge.2) then
+         if (nid.eq.0) write(6,1) istep,time,gl,gr,gle,ge
+    1    format(i8,1p5e15.7,' AMPall')
+         if (nid.eq.0) write(6,2) istep,time,gfl,gfr,gfle,gfe
+    2    format(i8,1p5e15.7,' AMPfluid')
+         if (nid.eq.0) write(6,3) istep,time,ggl,ggr,ggle,gge
+    3    format(i8,1p5e15.7,' AMPgas')
+      endif
+      vy2l = vy2
+      vf2l = vf2
+      vg2l = vg2
+
+      ifield = 6
+      call set_inductionless_forcing
+      ifield = 1
+
+
+
+      pord = uparam(3)
+      call extrappr(prext,pr,prlag(1,1,1,1,1),prlag(1,1,1,1,2),pord)
+
+      ntlsr = uparam(1) !freq of TLS re-distancing
+      nclsr = uparam(2) !freq of CLS re-distancing
+
+      call LS_default_driver(ntlsr,nclsr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userqtl ! Set thermal divergence
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat()   ! This routine to modify element vertices
+      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2()  ! This routine to modify mesh coordinates
+      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /ls_usr/ ifld_cls,ifld_clsr,
+     $                ifld_tls,ifld_tlsr 
+      integer ifld_cls,ifld_clsr
+      integer ifld_tls,ifld_tlsr
+
+      integer ntot,i, iface, iel
+      real xx, yy
+      real xlength
+
+      common /scruz/ wk(ly1,1000)
+      real wk
+      real alpha
+
+      ifld_cls = 2
+      ifld_tls = 3
+      ifld_clsr = 4
+      ifld_tlsr = 5
+      
+      ntot = lx1*ly1*lz1*nelt
+      if (nid.eq.0) then
+         open(unit=98,file='u2.txt')
+         read(98,*)      ! skip
+         read(98,*)      ! skip
+         read(98,*)      ! skip
+         read(98,*)      ! skip
+         read(98,*) alpha
+         close(98)
+      else
+         alpha = 0.0
+      endif
+      call gop ( alpha , wk , '+  ', 1 )
+
+      xlength = 2*pi/alpha
+      call rescale_x (xm1,0.0,xlength)
+
+      do iel=1,nelt
+         do iface = 1, 2*ldim
+            if (cbc(iface,iel,1) .eq. 'SYM') then
+               cbc(iface,iel,1) = 'W  '
+c              cbc(iface,iel,1) = 'v  '
+            endif
+         enddo
+      enddo
+
+      call gen_pert_ic ! perturbation i.c.s
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3()
+      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'SVV'
+      include 'AVM'
+
+      real eps,dt_cls_in,dt_tls_in
+      integer nsteps_cls, nsteps_tls
+
+      common /ls_usr/ ifld_cls,ifld_clsr,
+     $                ifld_tls,ifld_tlsr 
+      integer ifld_cls,ifld_clsr
+      integer ifld_tls,ifld_tlsr
+      integer ifdebug, ifixCLSbdry
+      real farfield
+
+      eps = 1.5/(lx1-1.0)/uparam(4)
+      ifdebug = 0
+      ifixCLSbdry = 0
+      farfield = 0.0
+      call ls_init(ifld_cls, ifld_clsr,
+     $             ifld_tls, ifld_tlsr,
+     $             eps, ifdebug, ifixCLSbdry, farfield)
+
+c---------------------------------------------------      
+c     This section to specify user defined parameters
+c     for AVM/SVV. Leave commented to use default parameters
+c     parameters. 
+
+      !fluid
+      svv_c0(1) = 1.0
+      svvcut(1) = (lx1-1.0)/2.0
+c     svvcut(1) = (lx1-1.0)/3.0
+
+      ! svv_c0(ifld_cls) = 1.0                 !ifld_cls
+c     svvcut(ifld_cls) = (lx1-1.0)/2.0-1.0
+      ! svv_k0(1) = 1.5
+      ! svv_k1(1) = 1.5
+      ! ifnlsvv(1) = .true.
+
+      ! avm_c1(1) = 1.0
+      ! avm_ncut(1) = 1.0
+      ! icont(1) = .false.
+      ! ifupwindsvv(ifld_cls) = .true.
+
+c     scalar 2      
+      ! svv_c0(ifld_tls) = 1.0                  !ifld_tls
+      ! svvcut(ifld_tls) = (lx1-1.0)/2.0-1.0
+c     svvcut(ifld_tls) = (lx1-1.0)/4.0-1.0
+      ! svv_k0(2) = 1.5
+      ! svv_k1(2) = 1.5
+      ! ifnlsvv(2) = .false.
+      ! ifupwindsvv(ifld_tls) = .true.
+
+c     scalar 3      
+      svv_c0(ifld_clsr) = 1.0                  !ifld_clsr
+      svvcut(ifld_clsr) = (lx1-1.0)/2.0
+c     svvcut(ifld_clsr) = (lx1-1.0)/3.0
+c     svvcut(ifld_clsr) = (lx1-1.0)/1.5
+      ! svv_k0(3) = 1.5
+      ! svv_k1(3) = 1.5
+      ! ifnlsvv(3) = .false.
+      ! ifupwindsvv(ifld_clsr) = .true.
+
+c     scalar 3      
+      svv_c0(ifld_tlsr) = 2.0                  !ifld_tlsr
+      svvcut(ifld_tlsr) = (lx1-1.0)/3.0
+c     svvcut(ifld_tlsr) = (lx1-1.0)/4.0
+      ! svv_k0(4) = 1.5
+      ! svv_k1(4) = 1.5
+      ! ifnlsvv(4) = .false.
+      ! ifupwindsvv(ifld_tlsr) = .true.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_bfld
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lxyz=lx1*ly1*lz1,lt=lxyz*lelt)
+      integer lxyz
+      common /scrvh/ h1(lxyz,lelt),h2(lxyz,lelt),msk(lt)
+      common /scrcr/ jx(lt),jy(lt),jz(lt),rhs(lt)
+      real msk,jx,jy,jz
+
+      common /fsos_mhd/ sigmal, sigmag, Bxx, Bzz
+      real sigmal, sigmag, Bxx, Bzz
+      integer i
+
+      common /indct/ phi(lxyz,lelt),fx(lt),fy(lt),fz(lt)
+      common /magnetic/ bbx(lxyz,lelt), bby(lxyz,lelt), bbz(lxyz, lelt)
+      real bbx, bby, bbz
+
+      nv = lx1*ly1*lz1*nelv
+      n  = lx1*ly1*lz1*nelt
+
+      call rzero(bbz,n)
+
+      do i = 1, n
+         x = xm1(i,1,1,1)
+         z = zm1(i,1,1,1)
+
+         bby(i,1) = Bzz
+         bbx(i,1) = Bxx
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_inductionless_forcing
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lxyz=lx1*ly1*lz1,lt=lxyz*lelt)
+      common /scrvh/ h1(lxyz,lelt),h2(lxyz,lelt),msk(lt)
+      common /scrcr/ jx(lt),jy(lt),jz(lt),rhs(lt)
+      real msk,jx,jy,jz
+
+      common /ls_usr/ ifld_cls,ifld_clsr,
+     $                ifld_tls,ifld_tlsr 
+      integer ifld_cls,ifld_clsr
+      integer ifld_tls,ifld_tlsr
+
+      real psi
+      integer i
+
+      common /indct/ phi(lxyz,lelt),fx(lt),fy(lt),fz(lt)
+      common /indca/ apprx(lt,mxprev),napprx(2)
+
+      common /fsos_mhd/ sigmal, sigmag, Bxx, Bzz
+      real sigmal, sigmag, Bxx, Bzz
+
+      common /magnetic/ bbx(lxyz,lelt), bby(lxyz,lelt), bbz(lxyz, lelt)
+      real bbx, bby, bbz
+
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      nv = lx1*ly1*lz1*nelv
+      n  = lx1*ly1*lz1*nelt
+
+
+      if (icalld.eq.0) then
+         icalld=1
+         call izero(napprx,2) ! Count for approximation space
+      endif
+
+      call set_bfld
+
+      call rzero(fx,n)  ! Initialize body force
+      call rzero(fy,n)
+      call rzero(fz,n)
+
+      call rone (msk,n)  ! pure Neumann
+      call rzero(h2 ,n)
+      call rone (h1 ,n)  ! h1 = sigma: electrical conductivity
+      do i = 1,n
+         psi = t(i,1,1,1,ifld_cls-1)
+         h1(i, 1) = (1.0-psi)*sigmag + psi*sigmal
+      enddo
+
+      call vcross   (jx,jy,jz,vx,vy,vz,bbx,bby,bbz,nv) ! (v x B)
+      call col2     (jx,h1,n)
+      call col2     (jy,h1,n)
+      call col2     (jz,h1,n)
+      call weak_div (rhs,jx,jy,jz,nelt) ! div(sigma(U x B))
+
+      vxm=glamax(vx,n)
+      vym=glamax(vy,n)
+      vzm=glamax(vz,n)
+      xjm=glamax(jx,n)
+      yjm=glamax(jy,n)
+      zjm=glamax(jz,n)
+      rhm=glamax(rhs,n)
+      if (nio.eq.0) write(6,11) istep,time,xjm,yjm,zjm,rhm,vxm,vym,vzm
+  11  format(i8,1p8e12.4,' rhs')
+
+      ifld = 6
+      maxi = 200
+      tol  = 1e-6 ! Just a guess, for now
+
+      ! solve div(sigma grad phi) = div(sigma(U x B))
+      call poisson('phiB',phi,rhs,h1,h2,msk,tmult,ifld,tol,maxi
+     $                                                 ,apprx,napprx)
+
+c     compute current:  j = -sigma(grad phi) + sigma(v x B)
+      call gradm1 (fx,fy,fz,phi)
+      call col2   (fx,h1,n)
+      call col2   (fy,h1,n)
+      call col2   (fz,h1,n)
+      call opsub2 (jx,jy,jz,fx,fy,fz) ! check signs
+
+      call vcross (fx,fy,fz,jx,jy,jz,bbx,bby,bbz,nv)
+
+c     call opcmult(fx,fy,fz,1.0)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine weak_div (wdiv,ux,uy,uz,nel)
+      include 'SIZE'
+      include 'TOTAL'
+      parameter (lxyz=lx1*ly1*lz1) 
+      real wdiv(lxyz,1),ux(lxyz,1),uy(lxyz,1),uz(lxyz,1)
+      common /scrdiv/ tmp1(lxyz)
+
+      integer e
+
+
+      do e=1,nel
+         call    col4(tmp1,w3m1,rxm1(1,1,1,e),ux(1,e),lxyz)
+         call addcol4(tmp1,w3m1,rym1(1,1,1,e),uy(1,e),lxyz)
+         call addcol4(tmp1,w3m1,rzm1(1,1,1,e),uz(1,e),lxyz)
+         call mxm    (dxtm1,lx1,tmp1,lx1,wdiv(1,e),lx1*lx1)
+
+         call    col4(tmp1,w3m1,sxm1(1,1,1,e),ux(1,e),lxyz)
+         call addcol4(tmp1,w3m1,sym1(1,1,1,e),uy(1,e),lxyz)
+         call addcol4(tmp1,w3m1,szm1(1,1,1,e),uz(1,e),lxyz)
+         k1=1
+         do k=1,lz1
+            call mxma   (tmp1(k1),lx1,dym1,lx1,wdiv(k1,e),lx1)
+            k1 = k1+lx1*lx1
+         enddo
+
+         call    col4(tmp1,w3m1,txm1(1,1,1,e),ux(1,e),lxyz)
+         call addcol4(tmp1,w3m1,tym1(1,1,1,e),uy(1,e),lxyz)
+         call addcol4(tmp1,w3m1,tzm1(1,1,1,e),uz(1,e),lxyz)
+         call mxma   (tmp1 ,lx1*lx1,dzm1,lx1,wdiv(1,e),lx1)
+
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine poisson(name,u,r,h1,h2,mask,mult,ifld,tol,maxi
+     $                                                 ,apprx,napprx)
+
+c     Solve Poisson equation with homogeneous BCs
+
+c     rhs (b) is unassembled, unweighted
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+c
+      character*4 name
+
+      real u(1),b(1),h1(1),h2(1),mask(1),mult(1),apprx(1)
+      integer   napprx(1)
+
+      integer*8 ntotg,nxyz
+
+      logical ifstdh
+      character*6  name6
+
+      logical ifwt,ifvec
+
+      call blank (name6,6)
+      call chcopy(name6,name,4)
+      ifwt  = .true.
+      ifvec = .false.
+      isd   = 1
+      imsh  = 1
+      if (iftmsh(ifld)) imsh=2
+      nel   = nelfld(ifld)
+
+
+      n = lx1*ly1*lz1*nel
+
+      ifield = 6
+      call dssum  (r,lx1,ly1,lz1)    ! dssum rhs
+      call project1
+     $    (r,n,apprx,napprx,h1,h2,mask,mult,ifwt,ifvec,name6)
+
+      if (iftmsh(ifld)) then
+        call hmhzpf (name,u,r,h1,h2,mask,mult,imsh,tol,maxi,isd,bintm1)
+      else
+        call hmhzpf (name,u,r,h1,h2,mask,mult,imsh,tol,maxi,isd,binvm1)
+      endif
+
+      call project2
+     $     (u,n,apprx,napprx,h1,h2,mask,mult,ifwt,ifvec,name6)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gen_pert_ic ! perturbation i.c.s
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /fsos_usr/ rhol, rhog, mul, mug,
+     $                  facc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+
+      common /fsparam/ eps,alpha,gamma_r,gamma_i
+      common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
+      real eps, alpha, gamma_r, gamma_i
+      real ub, vb
+      common /scrns/ ur(ly1,1000),ui(ly1,1000),vr(ly1,1000),vi(ly1,1000)
+      real ur, ui, vr, vi
+      common /scruz/ wk(ly1,1000)
+      real wk
+      integer iwk
+      
+      common /fstemp/ temp_ic(lx1,ly1,lz1,lelv,2)
+      real temp_ic
+
+      common /fsos_mhd/ sigmal, sigmag, Bxx, Bzz
+      real sigmal, sigmag, Bxx, Bzz
+
+
+      real Ul1, Ul2, Ug1, Ug2, fsr, fsi, h_local, epsamp, disp
+      real temp, ax
+      real x, y, ubase, c, s
+      real heaviside
+      integer e,eg,ex,ey,ez, nelx, nely, nelz,m,i,j,k,n
+      real hyper_k
+
+      nelz = 1
+
+      eps = 1e-4
+
+      call rzero(ur,ly1*1000)
+      call rzero(ui,ly1*1000)
+      call rzero(vr,ly1*1000)
+      call rzero(vi,ly1*1000)
+
+      if (nid.eq.0) then
+         open(unit=98,file='u2.txt')
+         read(98,*) nelx, nely
+         read(98,*) rhol, rhog, mul, mug
+         read(98,*) sigmal, sigmag
+         read(98,*) facc, gacc, sigma_sf, Bxx, Bzz
+         read(98,*) alpha
+         read(98,*) gamma_r, gamma_i
+         read(98,*) fsr, fsi
+         read(98,*) Ul1, Ul2
+         read(98,*) Ug1, Ug2
+         m = ny1*nely
+         do i=1,m
+            read(98,*) ur(i,1),ui(i,1),vr(i,1),vi(i,1)
+         enddo
+         close(98)
+      else
+         nelx = 0
+         nely = 0
+         rhol = 0.0
+         rhog = 0.0
+         mul = 0.0
+         mug = 0.0
+         sigmal = 0.0
+         sigmag = 0.0
+         facc = 0.0
+         gacc = 0.0
+         sigma_sf = 0.0
+         alpha = 0.0
+         gamma_r = 0.0
+         gamma_i = 0.0
+         fsr = 0.0
+         fsi = 0.0
+         Ul1 = 0.0
+         Ul2 = 0.0
+         Ug1 = 0.0
+         Ug2 = 0.0
+         m = 0
+         Bxx = 0.0
+         Bzz = 0.0
+      endif
+
+      call igop ( m , iwk , '+  ', 1 )
+      call gop ( ur , wk , '+  ', m )  ! gather over all procs
+      call gop ( ui , wk , '+  ', m )
+      call gop ( vr , wk , '+  ', m )
+      call gop ( vi , wk , '+  ', m )
+      call igop ( nelx , iwk , '+  ', 1 )
+      call igop ( nely , iwk , '+  ', 1 )
+      call gop ( rhol , wk , '+  ', 1 )
+      call gop ( rhog , wk , '+  ', 1 )
+      call gop ( mul , wk , '+  ', 1 )
+      call gop ( mug , wk , '+  ', 1 )
+      call gop ( sigmal , wk , '+  ', 1 )
+      call gop ( sigmag , wk , '+  ', 1 )
+      call gop ( facc , wk , '+  ', 1 )
+      call gop ( gacc , wk , '+  ', 1 )
+      call gop ( sigma_sf , wk , '+  ', 1 )
+      call gop ( alpha , wk , '+  ', 1 )
+      call gop ( gamma_r , wk , '+  ', 1 )
+      call gop ( gamma_i , wk , '+  ', 1 )
+      call gop ( fsr , wk , '+  ', 1 )
+      call gop ( fsi , wk , '+  ', 1 )
+      call gop ( Ul1 , wk , '+  ', 1 )
+      call gop ( Ul2 , wk , '+  ', 1 )
+      call gop ( Ug1 , wk , '+  ', 1 )
+      call gop ( Ug2 , wk , '+  ', 1 )
+      call gop ( Bxx , wk , '+  ', 1 )
+      call gop ( Bzz , wk , '+  ', 1 )
+
+      n = nx1*ny1*nz1*nelv
+
+      epsamp = eps*exp(gamma_r*time)
+
+      do e=1,nelv
+      do j=1,ny1
+      do i=1,nx1
+         x  = xm1(i,j,1,e)
+         y  = ym1(i,j,1,e)
+         ax = alpha*x + gamma_i*time
+         c  = cos(ax)
+         s  = sin(ax)
+         eg = lglel(e)
+
+         disp = fsr*cos(ax) - fsi*sin(ax)
+
+         ! Level-set initialization
+         do k=1,2
+           h_local = epsamp*disp
+           temp = h_local - y
+           if (k.eq.1) then
+              temp = heaviside(i,j,1,e,temp,0.0)
+           endif
+           temp_ic(i,j,1,e,k) = temp
+         enddo
+
+         ! Velocity initialization
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+         ub(i,j,1,e) = epsamp*(ur(j,ey)*c - ui(j,ey)*s)
+         vb(i,j,1,e) = epsamp*(vr(j,ey)*c - vi(j,ey)*s)
+         if (ey.le.nely/2.0) then
+           hyper_k = y*sqrt(sigmal/mul)*Bzz
+           ubase = 1.0 + Ul1*(cosh(hyper_k)-1.0) + Ul2*sinh(hyper_k)
+         else
+           hyper_k = y*sqrt(sigmag/mug)*Bzz
+           ubase = 1.0 + Ug1*(cosh(hyper_k)-1.0) + Ug2*sinh(hyper_k)
+         endif
+         ub(i,j,1,e) = ub(i,j,1,e) + ubase
+      enddo
+      enddo
+      enddo
+
+      return
+      end
+c---------------------------------------------------------------------

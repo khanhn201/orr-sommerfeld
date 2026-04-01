@@ -1,4 +1,4 @@
-function [xs,umat,vmat,amat,gamma,f] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz)
+function [xs,umat,vmat,amat,gamma,f, A] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz)
   [Ah,Bhh,Ch,Dhh,z,w] = semhat(N);
 
   k1 = sqrt(sigmas(1)/mus(1))*Bz;
@@ -14,6 +14,7 @@ function [xs,umat,vmat,amat,gamma,f] = solve_os2p_hartmann(alpha, N, rhos, mus, 
   A2 = (f*rhos(1)/sigmas(1)/Bz^2 + A1*cosh(k1))/sinh(k1);
   A3 = A1 + f/Bz^2*(rhos(1)/sigmas(1) - rhos(2)/sigmas(2));
   A4 = rat*A2;
+  A = [A1, A2, A3, A4];
 
 
   Nelem = 2;
@@ -39,16 +40,14 @@ function [xs,umat,vmat,amat,gamma,f] = solve_os2p_hartmann(alpha, N, rhos, mus, 
           U1 = U;
           Dh = 2*Dhh;
           Bh = 1/2*Bhh;
-          plot(x, U);
-          hold on;
+          % plot(x, U);
       else
           x = (z+1.0)/2; % x = [0, 1]
           U = A3*cosh(k2*x) + A4*sinh(k2*x) + f*rho/sigma/Bz^2;
           U2 = U;
           Dh = 2*Dhh;
           Bh = 1/2*Bhh;
-          plot(x, U);
-          A1, A2, A3, A4
+          % plot(x, U);
       end
       T = speye(nh);
       T(2, :) = Dh(1,:);

@@ -6,7 +6,7 @@ stopAt = endTime
 # numSteps = 50 #12000 #1000 #16000 #4000 #400 #400 #200000
 endTime = 80 #10e-4
 
-dt = 1e-3
+dt = 1e-2
 timeStepper = bdf2 #With bdf2 SF does not work well
 variabledt = yes
 targetCFL = 0.5
@@ -72,7 +72,8 @@ residualTol = 1e-10
 regularization = svv
 #residualProj = yes
 
-# [SCALAR04] # phi inductionless MHD
-# density = 1.0
-# diffusivity = 1e-8
-# residualTol = 1e-10
+[SCALAR04] # phi inductionless MHD, not really used at all
+solver = none
+density = 1.0
+diffusivity = 1e-8
+residualTol = 1e-10

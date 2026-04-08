@@ -7,10 +7,10 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 200;
+N = 250;
 
 
-Re = 1.7e5;
+Re = 3e4;
 ratio = 1e2;
 Ca = 0.07;
 Ga = 8.3e7;
@@ -20,9 +20,9 @@ mus = [1/Re, 1/Re/ratio];
 sigmas = [1/1, 1/1/ratio]*1/Re;
 st = mus(1)/Ca; % surface tension
 g = Ga*mus(1)^2/rhos(1)^2;
-alpha = 1.13;
+alpha = 1.0;
 
-Bz = 5.0;
+Bz = 1.0;
 Bx = 0.0;
 
 h = 1; % Height of the air domain

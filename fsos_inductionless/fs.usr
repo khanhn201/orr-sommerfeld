@@ -244,6 +244,11 @@ c-----------------------------------------------------------------------
       real ub, vb
       real temp_ic, eps, alpha, gamma_r, gamma_i
 
+      integer lxyz, lt
+      parameter (lxyz=lx1*ly1*lz1,lt=lxyz*lelt)
+      common /indct/ phi(lxyz,lelt),fx(lt),fy(lt),fz(lt)
+      real phi, fx, fy, fz
+
       ntot = lx1*ly1*lz1*nelv
 
       ! Initialize the first 5 steps with the same IC
@@ -319,6 +324,7 @@ c-----------------------------------------------------------------------
       ifield = 6
       call set_inductionless_forcing
       ifield = 1
+      call copy(t(1,1,1,1,5),phi,ntot)
 
 
 
@@ -484,8 +490,8 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
+      integer lxyz, lt
       parameter (lxyz=lx1*ly1*lz1,lt=lxyz*lelt)
-      integer lxyz
       common /scrvh/ h1(lxyz,lelt),h2(lxyz,lelt),msk(lt)
       common /scrcr/ jx(lt),jy(lt),jz(lt),rhs(lt)
       real msk,jx,jy,jz
@@ -615,27 +621,45 @@ c-----------------------------------------------------------------------
       integer e
 
 
-      do e=1,nel
-         call    col4(tmp1,w3m1,rxm1(1,1,1,e),ux(1,e),lxyz)
-         call addcol4(tmp1,w3m1,rym1(1,1,1,e),uy(1,e),lxyz)
-         call addcol4(tmp1,w3m1,rzm1(1,1,1,e),uz(1,e),lxyz)
-         call mxm    (dxtm1,lx1,tmp1,lx1,wdiv(1,e),lx1*lx1)
+      if (ldim.eq.2) then
+         do e=1,nel
 
-         call    col4(tmp1,w3m1,sxm1(1,1,1,e),ux(1,e),lxyz)
-         call addcol4(tmp1,w3m1,sym1(1,1,1,e),uy(1,e),lxyz)
-         call addcol4(tmp1,w3m1,szm1(1,1,1,e),uz(1,e),lxyz)
-         k1=1
-         do k=1,lz1
-            call mxma   (tmp1(k1),lx1,dym1,lx1,wdiv(k1,e),lx1)
-            k1 = k1+lx1*lx1
+            call    col4(tmp1,w3m1,rxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,rym1(1,1,1,e),uy(1,e),lxyz)
+            call mxm    (dxtm1,lx1,tmp1,lx1,wdiv(1,e),lx1)
+
+            call    col4(tmp1,w3m1,sxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,sym1(1,1,1,e),uy(1,e),lxyz)
+            call mxma   (tmp1 ,lx1,dym1,lx1,wdiv(1,e),lx1)
+
          enddo
 
-         call    col4(tmp1,w3m1,txm1(1,1,1,e),ux(1,e),lxyz)
-         call addcol4(tmp1,w3m1,tym1(1,1,1,e),uy(1,e),lxyz)
-         call addcol4(tmp1,w3m1,tzm1(1,1,1,e),uz(1,e),lxyz)
-         call mxma   (tmp1 ,lx1*lx1,dzm1,lx1,wdiv(1,e),lx1)
+      else ! 3D
 
-      enddo
+         do e=1,nel
+
+            call    col4(tmp1,w3m1,rxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,rym1(1,1,1,e),uy(1,e),lxyz)
+            call addcol4(tmp1,w3m1,rzm1(1,1,1,e),uz(1,e),lxyz)
+            call mxm    (dxtm1,lx1,tmp1,lx1,wdiv(1,e),lx1*lx1)
+
+            call    col4(tmp1,w3m1,sxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,sym1(1,1,1,e),uy(1,e),lxyz)
+            call addcol4(tmp1,w3m1,szm1(1,1,1,e),uz(1,e),lxyz)
+            k1=1
+            do k=1,lz1
+               call mxma   (tmp1(k1),lx1,dym1,lx1,wdiv(k1,e),lx1)
+               k1 = k1+lx1*lx1
+            enddo
+
+            call    col4(tmp1,w3m1,txm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,tym1(1,1,1,e),uy(1,e),lxyz)
+            call addcol4(tmp1,w3m1,tzm1(1,1,1,e),uz(1,e),lxyz)
+            call mxma   (tmp1 ,lx1*lx1,dzm1,lx1,wdiv(1,e),lx1)
+
+         enddo
+
+      endif
 
       return
       end
@@ -726,7 +750,7 @@ c-----------------------------------------------------------------------
 
       nelz = 1
 
-      eps = 1e-4
+      eps = 1e-5
 
       call rzero(ur,ly1*1000)
       call rzero(ui,ly1*1000)

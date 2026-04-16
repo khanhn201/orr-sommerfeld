@@ -76,8 +76,8 @@ title('U')
 % plot([0, 1], [-1,-1], '-b', 'linewidth', 4);
 
 % Interpolate to Nek mesh
-nely = 20; % Nely in 1 phase; must be divisible by 2 for geometric
-nelx = -30;
+nely = 40; % Nely in 1 phase; must be divisible by 2 for geometric
+nelx = -60;
 Nf = 8; % lx1
 el_ratio = 16.0000;
 zf = zeros(nely*Nf,1);

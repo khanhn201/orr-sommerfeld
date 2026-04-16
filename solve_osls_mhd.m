@@ -1,4 +1,4 @@
-function [xs,umat,vmat,amat,gamma,f, A] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz)
+function [xs,umat,vmat,amat,gamma,f, A] = solve_osls_mhd(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz)
   [Ah,Bhh,Ch,Dhh,z,w] = semhat(N);
 
   k1 = sqrt(sigmas(1)/mus(1))*Bz;

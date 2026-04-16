@@ -30,7 +30,7 @@ mode = 1; % Which of the unstable modes to output
 top_bc = 'W';
 accel_type = 'S';
 
-[xs,umat,vmat,amat,gamma,f,A] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
+[xs,umat,vmat,amat,gamma,f,A] = solve_os2p_mhd(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
 c = gamma*1i/alpha;
 lambda = alpha*c;
 

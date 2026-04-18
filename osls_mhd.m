@@ -21,12 +21,42 @@ alpha = 1.0;
 Bz = 1.0;
 Bx = 0.0;
 
-eps = 0.01; % interface thickness
+
 mode = 1; % Which of the unstable modes to output
 
 
-
-
-[xs,umat,vmat,amat,gamma,f,A] = solve_os2p_hartmann(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
+[xs,umat,vmat,amat,gamma,f,A] = solve_os2p_mhd(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
 c = gamma*1i/alpha;
-lambda = alpha*c;
+[~, unstable] = max(imag(c));
+c_unstable_2p = c(unstable)
+a = amat(unstable);
+v = vmat(:, unstable);
+u = umat(:, unstable);
+v = reshape(v, [N+1, 2]);
+u = reshape(u, [N+1, 2]);
+
+eps_list = [];
+err_list = [];
+for k = -16:0
+  eps = 10^(k/2);
+  eps_list(end+1) = eps;
+  [xs,umat,vmat,amat,gamma,f,U] = solve_osls_mhd(alpha, N, eps, rhos, mus, sigmas, st, g, Bx, Bz);
+  % figure;
+  % plot(abs(v), xs', 'linewidth', 2)
+  % title('V'); hold on;
+  % plot(abs(u), xs', 'linewidth', 2);
+  c = gamma*1i/alpha;
+  lambda = alpha*c;
+  [~, unstable] = max(imag(c));
+  c_unstable = c(unstable)
+  err = abs(imag(c_unstable) - imag(c_unstable_2p)) / abs(imag(c_unstable_2p));
+  err_list(end+1) = err;
+  % a = amat(unstable);
+  % v = vmat(:, unstable);
+  % u = umat(:, unstable);
+  % v = reshape(v, [N+1, 2]);
+  % u = reshape(u, [N+1, 2]);
+  % plot(abs(v), xs', 'linewidth', 2)
+  % plot(abs(u), xs', 'linewidth', 2);
+end
+plot(eps_list, err_list)

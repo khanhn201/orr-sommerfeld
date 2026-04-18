@@ -7,7 +7,7 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 250;
+N = 150;
 
 
 Re = 3e4;

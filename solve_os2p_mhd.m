@@ -103,7 +103,7 @@ function [xs,umat,vmat,amat,gamma,f, A] = solve_os2p_mhd(alpha, N, rhos, mus, si
 
   K = [
     Kuu_global, Kua_global;
-    Kau_global, -1i*alpha*1.0; % U(0) = 1.0
+    Kau_global, -1i*alpha*U1(end);
   ];
   M = [
     Muu_global, R*Q'*zeros(Nelem*nh, 1);

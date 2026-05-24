@@ -1,12 +1,15 @@
+% Flow in z-dir
+% Magnetic field in x-dir
+
 clear all; close all;
 output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 20;
+N = 10;
 
 
-Re = 100000;
+Re = 10000;
 Ha = 100;
 
 rho = 1;
@@ -18,18 +21,19 @@ W = 0.1;
 
 By = 1.0;
 By = Ha/sqrt(sigma/mu)/L;
-f = 2.0/Re;
+f = 2.0/Re; % Acceleration or pressure gradient
 
 
-alpha = 1.0;
-h = 1; % Height of the air domain
-mode = 1; % Which of the unstable modes to output
+alpha = 1.0; % Wave number in z
 
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 % [uvec,phivec] = solve_steady(N, mu, sigma, By, f);
 [U,Phi] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f);
 [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma,sigma_w, W, U,Phi, By, f, alpha);
 
+
+
+% Plot steady
 U = reshape(U,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;
@@ -74,6 +78,7 @@ view(3);
 
 
 
+% Plot perturb mode
 U = reshape(vvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;

@@ -88,7 +88,7 @@ el_pos(nely/2+1:end) = el_pos_tmp2;
 
 mesh_z = [0.5*(el_pos-1), 0.5*(el_pos+1)(2:end)];
 
-L = 1;
+L = 6;
 el_length = 0.1;
 eps = el_length*1.5/(Nf-1)/L;
 

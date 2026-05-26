@@ -130,7 +130,7 @@ c-----------------------------------------------------------------------
       vy2l = vy2
 
       ifield = 2
-c     call set_inductionless_forcing
+      call set_inductionless_forcing
       ifield = 1
 
       param(93) = 0      ! no projection for free-surface

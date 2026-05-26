@@ -98,7 +98,7 @@ c-----------------------------------------------------------------------
 
       ! Initialize the first 5 steps with the same IC
       if (istep.lt.5) then
-        call gen_pert_ic
+        call usrdat2
         do i=1,ntot
           vx(i,1,1,1) = ub(i,1,1,1)
           vy(i,1,1,1) = vb(i,1,1,1)
@@ -132,11 +132,9 @@ c-----------------------------------------------------------------------
       ifield = 2
       call set_inductionless_forcing
       ifield = 1
-
-      param(93) = 0      ! no projection for free-surface
-      param(94) = 0      ! no velocity projection for free-surface
-      param(95) = 0      ! no pressure projection for free-surface
       
+      ifusermv = .true.   ! prescribe our own free surface motion
+      call quickmv        ! move the mesh  (user affine motion)
       return
       end
 c-----------------------------------------------------------------------
@@ -202,9 +200,14 @@ c-----------------------------------------------------------------------
       real eps, alpha, gamma_r, gamma_i
       common /fsos_surf/ fsr, fsi
       real fsr, fsi
+      common /xyorig/  xo(lx1*ly1*lz1*lelt),yo(lx1*ly1*lz1*lelt)
 
       character*3 cb
       integer e,eg,ex,ey,ez
+
+      ifusermv = .true.   ! prescribe our own free surface motion
+
+
 
       ntot = lx1*ly1*lz1*nelt
       if (nid.eq.0) then
@@ -223,16 +226,22 @@ c-----------------------------------------------------------------------
       xlength = 2*pi/alpha
       call rescale_x (xm1,0.0,xlength)
 
+      
+      if (icalld.eq.0) then
+         call copy(xo,xm1,ntot)
+         call copy(yo,ym1,ntot)
+      endif
+      icalld = icalld+1
+
       call gen_pert_ic ! perturbation i.c.s
 
       n = nx1*ny1*nz1*nelv
 
       do i=1,n   ! perurbation displacement
-         x  = xm1(i,1,1,1)
-         y  = ym1(i,1,1,1)
+         x  = xo(i)
+         y  = yo(i)
          ax = alpha*x + gamma_i*time
          disp = fsr*cos(ax) - fsi*sin(ax)
-         write(6, *), disp
          yscl = 1+y   !  zero when y=-1, 1 when y = 0
          ym1(i,1,1,1) = y + eps*yscl*disp
       enddo
@@ -505,7 +514,7 @@ c-----------------------------------------------------------------------
 
       nelz = 1
 
-      eps = 1.0e-3
+      eps = 1.0e-4
 
       call rzero(ur,ly1*1000)
       call rzero(ui,ly1*1000)

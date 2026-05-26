@@ -10,8 +10,8 @@ set(0, "defaultLineLineWidth", 2)
 N = 150;
 
 
-Re = 3e4;
-ratio = 1e8;
+Re = 2.1e4;
+ratio = 1e6;
 Ca = 0.07;
 Ga = 8.3e7;
 
@@ -22,7 +22,7 @@ st = mus(1)/Ca; % surface tension
 g = Ga*mus(1)^2/rhos(1)^2;
 alpha = 1.0;
 
-Bz = 1.0;
+Bz = 1.0e-2;
 Bx = 0.0;
 
 h = 1; % Height of the air domain
@@ -49,7 +49,9 @@ lambda = alpha*c;
 % grid on;
 
 
-unstable = find(imag(c) > 0.0)(mode);
+unstable = find(imag(c) > 0.0);
+c_unstable = c(unstable)
+unstable = unstable(mode);
 c_unstable = c(unstable)
 a = amat(unstable);
 v = vmat(:, unstable);
@@ -77,9 +79,9 @@ title('U')
 
 % Interpolate to Nek mesh
 nely = 20; % Nely in 1 phase; must be divisible by 2 for geometric
-nelx = -12;
+nelx = -30;
 Nf = 8; % lx1
-el_ratio = 16.0000;
+el_ratio = 4.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
 el_pos = linspace(-1, 1, nely + 1); % Linear element

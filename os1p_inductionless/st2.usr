@@ -1,0 +1,615 @@
+c-----------------------------------------------------------------------
+c
+c     Setup for 2D free-surface standing wave problem
+c
+c     Re = 3.e4
+c
+c     We =  0.011269332539972
+c
+c     Fr = 0.091827364554637
+c
+c
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      udiff =0.
+      utrans=0.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,ieg)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /fsos_usr/ rhol, rhog, mul, mug,
+     $                  facc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+
+      integer lxyz
+      parameter (lxyz=lx1*ly1*lz1)
+      common /indct/ phi(lxyz,lelt)
+     $ ,fx(lx1,ly1,lz1,lelt),fy(lx1,ly1,lz1,lelt),fz(lx1,ly1,lz1,lelt)
+
+
+
+      fbx = fx(ix,iy,iz,e)
+      fby = fy(ix,iy,iz,e)
+      fbz = fz(ix,iy,iz,e)
+
+      ffx = facc + fbx
+      ffy = -gacc + fby
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+C
+      qvol   = 0.0
+      source = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer ntot,i
+
+      real glsum, glsc3, glsc2
+      integer pord
+      integer ncut
+
+      integer nface, f, e
+      real bfluid(lx1*ly1*lz1*lelt)
+      real psifluid(lx1,ly1,lz1,lelv)
+      real pr_avg
+
+      real vol, vy2, vy20, gr, gl, ge, vy2r, vy2l,timestart
+      real gle
+      real vf20, vf2l, vg20, vg2l, vf2, vg2
+      real gfr, gfl, gfe, gfle
+      real ggr, ggl, gge, ggle
+      real vf2r, vg2r
+
+      save vy20, vy2l, timestart
+      save vf20, vf2l, vg20, vg2l
+
+      common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
+      common /fsparam/ eps,alpha,gamma_r,gamma_i
+      real ub, vb
+      real temp_ic, eps, alpha, gamma_r, gamma_i
+
+      integer lxyz, lt
+      parameter (lxyz=lx1*ly1*lz1,lt=lxyz*lelt)
+      common /indct/ phi(lxyz,lelt),fx(lt),fy(lt),fz(lt)
+      real phi, fx, fy, fz
+
+      ntot = lx1*ly1*lz1*nelv
+
+      ! Initialize the first 5 steps with the same IC
+      if (istep.lt.5) then
+        call gen_pert_ic
+        do i=1,ntot
+          vx(i,1,1,1) = ub(i,1,1,1)
+          vy(i,1,1,1) = vb(i,1,1,1)
+        enddo
+      endif
+
+      ! Calculate growth rate
+      vol = glsum(bm1,ntot)
+      vy2 = glsc3(vy,bm1,vy,ntot)/vol
+
+      if (vy2.gt.0.0) vy2 = sqrt(vy2)
+
+      vy2r = vy2/vy20
+      vy2l = vy2/vy2l
+      gr = log(vy2r)/(time-timestart)
+      gl = log(vy2l)/dt
+      ge = abs(gr - gamma_r)/gamma_r
+      gle = abs(gl - gamma_r)/gamma_r
+
+
+      if (istep.le.50) then
+         vy20 = vy2
+         timestart=time
+      endif
+      if (istep.ge.2) then
+         if (nid.eq.0) write(6,1) istep,time,gl,gr,gle,ge
+    1    format(i8,1p5e15.7,' AMP')
+      endif
+      vy2l = vy2
+
+      ifield = 2
+c     call set_inductionless_forcing
+      ifield = 1
+
+      param(93) = 0      ! no projection for free-surface
+      param(94) = 0      ! no velocity projection for free-surface
+      param(95) = 0      ! no pressure projection for free-surface
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /fsos_usr/ rhol, rhog, mul, mug,
+     $                  facc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+
+      ux=0.0
+      uy=0.0
+      uz=0.0
+      temp=0.0
+
+      sigma = sigma_sf
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      real xx,yy, x_max
+
+      common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
+      real ub, vb
+
+      e = gllel(eg)
+
+      xx = xm1(ix,iy,iz,e)
+      yy = ym1(ix,iy,iz,e)
+
+      ux = ub(ix,iy,iz,e)
+      uy = vb(ix,iy,iz,e)
+      uz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'   ! nelx,nely for quickmv
+      include 'CTIMER' ! icalld
+
+      common /fsos_usr/ rhol, rhog, mul, mug,
+     $                  facc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+      common /fsparam/ eps,alpha,gamma_r,gamma_i
+      real eps, alpha, gamma_r, gamma_i
+      common /fsos_surf/ fsr, fsi
+      real fsr, fsi
+
+      character*3 cb
+      integer e,eg,ex,ey,ez
+
+      ntot = lx1*ly1*lz1*nelt
+      if (nid.eq.0) then
+         open(unit=98,file='u2.txt')
+         read(98,*)      ! skip
+         read(98,*)      ! skip
+         read(98,*)      ! skip
+         read(98,*)      ! skip
+         read(98,*) alpha
+         close(98)
+      else
+         alpha = 0.0
+      endif
+      call gop ( alpha , wk , '+  ', 1 )
+
+      xlength = 2*pi/alpha
+      call rescale_x (xm1,0.0,xlength)
+
+      call gen_pert_ic ! perturbation i.c.s
+
+      n = nx1*ny1*nz1*nelv
+
+      do i=1,n   ! perurbation displacement
+         x  = xm1(i,1,1,1)
+         y  = ym1(i,1,1,1)
+         ax = alpha*x + gamma_i*time
+         disp = fsr*cos(ax) - fsi*sin(ax)
+         write(6, *), disp
+         yscl = 1+y   !  zero when y=-1, 1 when y = 0
+         ym1(i,1,1,1) = y + eps*yscl*disp
+      enddo
+      param(59) = 1   ! force std operator evaluation for deformed geometry
+
+c     Set surface tension on free surface
+
+      sigma = sigma_sf
+
+      itop = 3
+      if (if3d) itop = 5
+      do e=1,nelv
+         cb = cbc(itop,e,1) ! bc on top surface
+         if (cb.eq.'MS ') bc(4,itop,e,1) = sigma
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_bfld
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer lxyz, lt
+      parameter (lxyz=lx1*ly1*lz1,lt=lxyz*lelt)
+      common /scrvh/ h1(lxyz,lelt),h2(lxyz,lelt),msk(lt)
+      common /scrcr/ jx(lt),jy(lt),jz(lt),rhs(lt)
+      real msk,jx,jy,jz
+
+      common /fsos_mhd/ sigmal, sigmag, Bxx, Bzz
+      real sigmal, sigmag, Bxx, Bzz
+      integer i
+
+      common /indct/ phi(lxyz,lelt),fx(lt),fy(lt),fz(lt)
+      real phi, fx,fy,fz
+      common /magnetic/ bbx(lxyz,lelt), bby(lxyz,lelt), bbz(lxyz, lelt)
+      real bbx, bby, bbz
+
+      nv = lx1*ly1*lz1*nelv
+      n  = lx1*ly1*lz1*nelt
+
+      call rzero(bbz,n)
+
+      do i = 1, n
+         x = xm1(i,1,1,1)
+         z = zm1(i,1,1,1)
+
+         bby(i,1) = Bzz
+         bbx(i,1) = Bxx
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_inductionless_forcing
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lxyz=lx1*ly1*lz1,lt=lxyz*lelt)
+      common /scrvh/ h1(lxyz,lelt),h2(lxyz,lelt),msk(lt)
+      common /scrcr/ jx(lt),jy(lt),jz(lt),rhs(lt)
+      real msk,jx,jy,jz
+
+
+      real psi
+      integer i
+
+      common /indct/ phi(lxyz,lelt),fx(lt),fy(lt),fz(lt)
+      common /indca/ apprx(lt,mxprev),napprx(2)
+
+      common /fsos_mhd/ sigmal, sigmag, Bxx, Bzz
+      real sigmal, sigmag, Bxx, Bzz
+
+      common /magnetic/ bbx(lxyz,lelt), bby(lxyz,lelt), bbz(lxyz, lelt)
+      real bbx, bby, bbz
+
+      integer icalld
+      save    icalld
+      data    icalld /0/
+
+      nv = lx1*ly1*lz1*nelv
+      n  = lx1*ly1*lz1*nelt
+
+
+      if (icalld.eq.0) then
+         icalld=1
+         call izero(napprx,2) ! Count for approximation space
+      endif
+
+      call set_bfld
+
+      call rzero(fx,n)  ! Initialize body force
+      call rzero(fy,n)
+      call rzero(fz,n)
+
+      call rone (msk,n)  ! pure Neumann
+      call rzero(h2 ,n)
+      call rone (h1 ,n)  ! h1 = sigma: electrical conductivity
+
+      call vcross   (jx,jy,jz,vx,vy,vz,bbx,bby,bbz,nv) ! (v x B)
+      call weak_div (rhs,jx,jy,jz,nelt) ! div(sigma(U x B))
+
+      vxm=glamax(vx,n)
+      vym=glamax(vy,n)
+      vzm=glamax(vz,n)
+      xjm=glamax(jx,n)
+      yjm=glamax(jy,n)
+      zjm=glamax(jz,n)
+      rhm=glamax(rhs,n)
+      if (nio.eq.0) write(6,11) istep,time,xjm,yjm,zjm,rhm,vxm,vym,vzm
+  11  format(i8,1p8e12.4,' rhs')
+
+      ifld = 2
+      maxi = 200
+      tol  = 1e-6 ! Just a guess, for now
+
+      ! solve div(sigma grad phi) = div(sigma(U x B))
+      call poisson('phiB',phi,rhs,h1,h2,msk,tmult,ifld,tol,maxi
+     $                                                 ,apprx,napprx)
+
+c     compute current:  j = -sigma(grad phi) + sigma(v x B)
+      call gradm1 (fx,fy,fz,phi)
+      call opsub2 (jx,jy,jz,fx,fy,fz) ! check signs
+
+      call vcross (fx,fy,fz,jx,jy,jz,bbx,bby,bbz,nv)
+
+      call opcmult(fx,fy,fz,sigmal)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine weak_div (wdiv,ux,uy,uz,nel)
+      include 'SIZE'
+      include 'TOTAL'
+      parameter (lxyz=lx1*ly1*lz1) 
+      real wdiv(lxyz,1),ux(lxyz,1),uy(lxyz,1),uz(lxyz,1)
+      common /scrdiv/ tmp1(lxyz)
+
+      integer e
+
+
+      if (ldim.eq.2) then
+         do e=1,nel
+
+            call    col4(tmp1,w3m1,rxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,rym1(1,1,1,e),uy(1,e),lxyz)
+            call mxm    (dxtm1,lx1,tmp1,lx1,wdiv(1,e),lx1)
+
+            call    col4(tmp1,w3m1,sxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,sym1(1,1,1,e),uy(1,e),lxyz)
+            call mxma   (tmp1 ,lx1,dym1,lx1,wdiv(1,e),lx1)
+
+         enddo
+
+      else ! 3D
+
+         do e=1,nel
+
+            call    col4(tmp1,w3m1,rxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,rym1(1,1,1,e),uy(1,e),lxyz)
+            call addcol4(tmp1,w3m1,rzm1(1,1,1,e),uz(1,e),lxyz)
+            call mxm    (dxtm1,lx1,tmp1,lx1,wdiv(1,e),lx1*lx1)
+
+            call    col4(tmp1,w3m1,sxm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,sym1(1,1,1,e),uy(1,e),lxyz)
+            call addcol4(tmp1,w3m1,szm1(1,1,1,e),uz(1,e),lxyz)
+            k1=1
+            do k=1,lz1
+               call mxma   (tmp1(k1),lx1,dym1,lx1,wdiv(k1,e),lx1)
+               k1 = k1+lx1*lx1
+            enddo
+
+            call    col4(tmp1,w3m1,txm1(1,1,1,e),ux(1,e),lxyz)
+            call addcol4(tmp1,w3m1,tym1(1,1,1,e),uy(1,e),lxyz)
+            call addcol4(tmp1,w3m1,tzm1(1,1,1,e),uz(1,e),lxyz)
+            call mxma   (tmp1 ,lx1*lx1,dzm1,lx1,wdiv(1,e),lx1)
+
+         enddo
+
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine poisson(name,u,r,h1,h2,mask,mult,ifld,tol,maxi
+     $                                                 ,apprx,napprx)
+
+c     Solve Poisson equation with homogeneous BCs
+
+c     rhs (b) is unassembled, unweighted
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+c
+      character*4 name
+
+      real u(1),b(1),h1(1),h2(1),mask(1),mult(1),apprx(1)
+      integer   napprx(1)
+
+      integer*8 ntotg,nxyz
+
+      logical ifstdh
+      character*6  name6
+
+      logical ifwt,ifvec
+
+      call blank (name6,6)
+      call chcopy(name6,name,4)
+      ifwt  = .true.
+      ifvec = .false.
+      isd   = 1
+      imsh  = 1
+      if (iftmsh(ifld)) imsh=2
+      nel   = nelfld(ifld)
+
+
+      n = lx1*ly1*lz1*nel
+
+      ifield = 2
+      call dssum  (r,lx1,ly1,lz1)    ! dssum rhs
+      call project1
+     $    (r,n,apprx,napprx,h1,h2,mask,mult,ifwt,ifvec,name6)
+
+      if (iftmsh(ifld)) then
+        call hmhzpf (name,u,r,h1,h2,mask,mult,imsh,tol,maxi,isd,bintm1)
+      else
+        call hmhzpf (name,u,r,h1,h2,mask,mult,imsh,tol,maxi,isd,binvm1)
+      endif
+
+      call project2
+     $     (u,n,apprx,napprx,h1,h2,mask,mult,ifwt,ifvec,name6)
+
+      return
+      end
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      subroutine gen_pert_ic ! perturbation i.c.s
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /fsos_usr/ rhol, rhog, mul, mug,
+     $                  facc, gacc, sigma_sf
+      real rhol, rhog, mul, mug, facc, gacc, sigma_sf
+
+      common /fsparam/ eps,alpha,gamma_r,gamma_i
+      common /fsarray/ ub(lx1,ly1,lz1,lelt),vb(lx1,ly1,lz1,lelt)
+      real eps, alpha, gamma_r, gamma_i
+      real ub, vb
+      common /scrns/ ur(ly1,1000),ui(ly1,1000),vr(ly1,1000),vi(ly1,1000)
+      real ur, ui, vr, vi
+      common /scruz/ wk(ly1,1000)
+      real wk
+      integer iwk
+      
+      common /fstemp/ temp_ic(lx1,ly1,lz1,lelv,2)
+      real temp_ic
+
+      common /fsos_mhd/ sigmal, sigmag, Bxx, Bzz
+      real sigmal, sigmag, Bxx, Bzz
+
+
+      common /fsos_surf/ fsr, fsi
+      real Ul1, Ul2, Ug1, Ug2, fsr, fsi, h_local, epsamp, disp
+      real temp, ax
+      real x, y, ubase, c, s
+      real heaviside
+      integer e,eg,ex,ey,ez, nelx, nely, nelz,m,i,j,k,n
+      real hyper_k
+
+      nelz = 1
+
+      eps = 1.0e-3
+
+      call rzero(ur,ly1*1000)
+      call rzero(ui,ly1*1000)
+      call rzero(vr,ly1*1000)
+      call rzero(vi,ly1*1000)
+
+      if (nid.eq.0) then
+         open(unit=98,file='u2.txt')
+         read(98,*) nelx, nely
+         read(98,*) rhol, rhog, mul, mug
+         read(98,*) sigmal, sigmag
+         read(98,*) facc, gacc, sigma_sf, Bxx, Bzz
+         read(98,*) alpha
+         read(98,*) gamma_r, gamma_i
+         read(98,*) fsr, fsi
+         read(98,*) Ul1, Ul2
+         read(98,*) Ug1, Ug2
+         m = ny1*nely
+         do i=1,m
+            read(98,*) ur(i,1),ui(i,1),vr(i,1),vi(i,1)
+         enddo
+         close(98)
+      else
+         nelx = 0
+         nely = 0
+         rhol = 0.0
+         rhog = 0.0
+         mul = 0.0
+         mug = 0.0
+         sigmal = 0.0
+         sigmag = 0.0
+         facc = 0.0
+         gacc = 0.0
+         sigma_sf = 0.0
+         alpha = 0.0
+         gamma_r = 0.0
+         gamma_i = 0.0
+         fsr = 0.0
+         fsi = 0.0
+         Ul1 = 0.0
+         Ul2 = 0.0
+         Ug1 = 0.0
+         Ug2 = 0.0
+         m = 0
+         Bxx = 0.0
+         Bzz = 0.0
+      endif
+
+      call igop ( m , iwk , '+  ', 1 )
+      call gop ( ur , wk , '+  ', m )  ! gather over all procs
+      call gop ( ui , wk , '+  ', m )
+      call gop ( vr , wk , '+  ', m )
+      call gop ( vi , wk , '+  ', m )
+      call igop ( nelx , iwk , '+  ', 1 )
+      call igop ( nely , iwk , '+  ', 1 )
+      call gop ( rhol , wk , '+  ', 1 )
+      call gop ( rhog , wk , '+  ', 1 )
+      call gop ( mul , wk , '+  ', 1 )
+      call gop ( mug , wk , '+  ', 1 )
+      call gop ( sigmal , wk , '+  ', 1 )
+      call gop ( sigmag , wk , '+  ', 1 )
+      call gop ( facc , wk , '+  ', 1 )
+      call gop ( gacc , wk , '+  ', 1 )
+      call gop ( sigma_sf , wk , '+  ', 1 )
+      call gop ( alpha , wk , '+  ', 1 )
+      call gop ( gamma_r , wk , '+  ', 1 )
+      call gop ( gamma_i , wk , '+  ', 1 )
+      call gop ( fsr , wk , '+  ', 1 )
+      call gop ( fsi , wk , '+  ', 1 )
+      call gop ( Ul1 , wk , '+  ', 1 )
+      call gop ( Ul2 , wk , '+  ', 1 )
+      call gop ( Ug1 , wk , '+  ', 1 )
+      call gop ( Ug2 , wk , '+  ', 1 )
+      call gop ( Bxx , wk , '+  ', 1 )
+      call gop ( Bzz , wk , '+  ', 1 )
+
+      n = nx1*ny1*nz1*nelv
+
+      epsamp = eps*exp(gamma_r*time)
+
+      do e=1,nelv
+      do j=1,ny1
+      do i=1,nx1
+         x  = xm1(i,j,1,e)
+         y  = ym1(i,j,1,e)
+         ax = alpha*x + gamma_i*time
+         c  = cos(ax)
+         s  = sin(ax)
+         eg = lglel(e)
+
+         disp = fsr*cos(ax) - fsi*sin(ax)
+
+
+         ! Velocity initialization
+         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
+         ub(i,j,1,e) = epsamp*(ur(j,ey)*c - ui(j,ey)*s)
+         vb(i,j,1,e) = epsamp*(vr(j,ey)*c - vi(j,ey)*s)
+         hyper_k = y*sqrt(sigmal/mul)*Bzz
+         ubase = 1.0 + Ul1*(cosh(hyper_k)-1.0) + Ul2*sinh(hyper_k)
+         ub(i,j,1,e) = ub(i,j,1,e) + ubase
+      enddo
+      enddo
+      enddo
+
+      return
+      end
+c---------------------------------------------------------------------

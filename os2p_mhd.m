@@ -11,7 +11,7 @@ N = 150;
 
 
 Re = 3e4;
-ratio = 1e2;
+ratio = 1e6;
 Ca = 0.07;
 Ga = 8.3e7;
 
@@ -49,7 +49,7 @@ lambda = alpha*c;
 % grid on;
 
 
-unstable = find(imag(c) > 0.0);
+unstable = find(imag(c) > 0.0)(mode);
 c_unstable = c(unstable)
 a = amat(unstable);
 v = vmat(:, unstable);

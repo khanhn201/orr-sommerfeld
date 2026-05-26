@@ -1,3 +1,5 @@
+% Add pressure and phi restriction? or subtract mean out every step
+% Solve eigenvalue with Schur compl?
 function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W, U,Phi, By, f, alpha)
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
   Nelx = 3;
@@ -14,6 +16,10 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
   Ih = speye(N+1);
   R = Ih(2:end-1,:);
   R2D = kron(R, R);
+
+  Ih = speye(N+1);
+  Rp = kron(Ih, Ih);
+  Rp = Rp(2:end,:);
 
   B2D = kron(Bh,Bh);
   A2D = kron(Bh,Ah) + kron(Ah,Bh);
@@ -59,12 +65,12 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
       R2D*Kwphi;
   ];
   KVP = [
-      R2D*Kup;  
-      R2D*Kvp;  
-      R2D*Kwp;  
+      R2D*Kup*Rp';  
+      R2D*Kvp*Rp';  
+      R2D*Kwp*Rp';  
   ];
   KPhiV = [Kphiu*R2D', Kphiv*R2D', Kphiw*R2D'];
-  KPV = [Kpu*R2D', Kpv*R2D', Kpw*R2D'];
+  KPV = [Rp*Kpu*R2D', Rp*Kpv*R2D', Rp*Kpw*R2D'];
   MV = [
     R2D*Mu*R2D', 0*R2D*Mu*R2D', 0*R2D*Mu*R2D';
     0*R2D*Mu*R2D', R2D*Mv*R2D', 0*R2D*Mu*R2D';
@@ -108,7 +114,7 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
 
   K = [
     KVV, KVP, Kuphi_global*Q*Rphi2D';
-    KPV, 0*B2D, zeros(size(KPV,1), size(Rphi2D',2));
+    KPV, 0*Rp*B2D*Rp', zeros(size(KPV,1), size(Rphi2D',2));
     Rphi2D*Q'*Kphiu_global, zeros(size(Rphi2D,1),size(KVP,2)), Rphi2D*Q'*Kphiphi*Q*Rphi2D';
   ];
   npphi = size(K,1)-size(MV,1);
@@ -116,24 +122,21 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
     MV                     ,zeros(size(MV,1),npphi);
     zeros(npphi,size(MV,1)),zeros(npphi,npphi);
   ];
-  pinvM = pinv(M);
-  [vecs, gamma] = eigs(pinvM*K, 5, "lr");
+  pinvM = pinv(K);
+  % [vecs, gamma] = eigs(pinvM*K, 5, "lr");
+  % gamma = diag(gamma)
+  % [vecs, gamma] = eig(pinvM*K, 'vector');
   
-  % [vecs, gamma] = eigs(K, M, 5, "lm");
-  size(vecs)
-  size(gamma)
+  [vecs, gamma] = eigs(pinvM*K, pinvM*M, 5, 'lr');
+  % size(vecs)
   c = gamma*1i/alpha;
-  [~, unstable] = max(imag(diag(c)));
+  [~, unstable] = max(imag(c));
   vu = vecs(:, unstable);
-  size(vu)
   vu = vu(:);
   
-  size(vu)
-  pause
-
-  uvec   =      R2D'*vu(0*(N-1)^2+1        :1*(N-1)^2        );
-  vvec   =      R2D'*vu(1*(N-1)^2+1        :2*(N-1)^2        );
-  wvec   =      R2D'*vu(2*(N-1)^2+1        :3*(N-1)^2        );
-  pvec   =           vu(3*(N-1)^2+1        :3*(N-1)^2+(N+1)^2);
-  phivec = Q*Rphi2D'*vu(3*(N-1)^2+(N+1)^2+1:end              );
+  uvec   =      R2D'*vu(0*(N-1)^2+1       :1*(N-1)^2        );
+  vvec   =      R2D'*vu(1*(N-1)^2+1       :2*(N-1)^2        );
+  wvec   =      R2D'*vu(2*(N-1)^2+1       :3*(N-1)^2        );
+  pvec   =       Rp'*vu(3*(N-1)^2+1       :3*(N-1)^2+(N+1)^2-1);
+  phivec = Q*Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
 end

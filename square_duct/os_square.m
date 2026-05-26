@@ -6,11 +6,11 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 10;
+N = 15;
 
 
 Re = 10000;
-Ha = 100;
+Ha = 10;
 
 rho = 1;
 mu = 1/Re;
@@ -79,12 +79,25 @@ view(3);
 
 
 % Plot perturb mode
-U = reshape(vvec,N+1,N+1);
+U = reshape(uvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;
 surf(x,y,abs(U));
 shading interp;
 title('u');
+U = reshape(vvec,N+1,N+1);
+[y,x] = meshgrid(z,z);
+figure;
+surf(x,y,abs(U));
+shading interp;
+title('v');
+
+P = reshape(pvec,N+1,N+1);
+[y,x] = meshgrid(z,z);
+figure;
+surf(x,y,abs(P));
+shading interp;
+title('p');
 
 Nx = 3;
 Ny = 3;

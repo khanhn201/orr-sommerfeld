@@ -11,7 +11,7 @@ N = 150;
 
 
 Re = 3e4;
-ratio = 1e6;
+ratio = 1e8;
 Ca = 0.07;
 Ga = 8.3e7;
 
@@ -76,10 +76,10 @@ title('U')
 % plot([0, 1], [-1,-1], '-b', 'linewidth', 4);
 
 % Interpolate to Nek mesh
-nely = 12; % Nely in 1 phase; must be divisible by 2 for geometric
+nely = 20; % Nely in 1 phase; must be divisible by 2 for geometric
 nelx = -12;
 Nf = 8; % lx1
-el_ratio = 8.0000;
+el_ratio = 16.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
 el_pos = linspace(-1, 1, nely + 1); % Linear element
@@ -125,9 +125,9 @@ fclose(fid);
 % Box file
 el_pos_real = 1:(nely + 1);
 el_pos_real(1:nely+1) = (el_pos - 1.0)/2.0;
-fid = fopen("st2.rea", "w");
-fprintf(fid, "-2\n");
-fprintf(fid, "-2\n");
+fid = fopen("fs_g.box", "w");
+fprintf(fid, "st2.rea\n");
+fprintf(fid, "2\n");
 fprintf(fid, "2\n");
 fprintf(fid, "Box\n");
 fprintf(fid, "%d %d\n", nelx, nely);

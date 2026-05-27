@@ -10,7 +10,7 @@ set(0, "defaultLineLineWidth", 2)
 N = 150;
 
 
-Re = 2.1e4;
+Re = 2.2e4;
 ratio = 1e6;
 Ca = 0.07;
 Ga = 8.3e7;
@@ -22,7 +22,7 @@ st = mus(1)/Ca; % surface tension
 g = Ga*mus(1)^2/rhos(1)^2;
 alpha = 1.0;
 
-Bz = 1.0e-2;
+Bz = 1.0;
 Bx = 0.0;
 
 h = 1; % Height of the air domain
@@ -30,7 +30,7 @@ mode = 1; % Which of the unstable modes to output
 top_bc = 'W';
 accel_type = 'S';
 
-[xs,umat,vmat,amat,gamma,f,A] = solve_os2p_mhd(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
+[xs,umat,vmat,amat,gamma,f,A] = solve_os1p_mhd(alpha, N, rhos, mus, sigmas, st, g, Bx, Bz);
 c = gamma*1i/alpha;
 lambda = alpha*c;
 
@@ -56,8 +56,8 @@ c_unstable = c(unstable)
 a = amat(unstable);
 v = vmat(:, unstable);
 u = umat(:, unstable);
-v = reshape(v, [N+1, 2]);
-u = reshape(u, [N+1, 2]);
+v = reshape(v, [N+1, 1]);
+u = reshape(u, [N+1, 1]);
 figure;
 plot(abs(v), xs', 'linewidth', 2)
 title('V')
@@ -81,7 +81,7 @@ title('U')
 nely = 20; % Nely in 1 phase; must be divisible by 2 for geometric
 nelx = -30;
 Nf = 8; % lx1
-el_ratio = 4.0000;
+el_ratio = 2.0000;
 zf = zeros(nely*Nf,1);
 [zff,wf] = zwgll(Nf-1);
 el_pos = linspace(-1, 1, nely + 1); % Linear element

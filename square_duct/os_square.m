@@ -6,10 +6,10 @@ output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
-N = 15;
+N = 20;
 
 
-Re = 10000;
+Re = 50000;
 Ha = 10;
 
 rho = 1;
@@ -31,6 +31,7 @@ alpha = 1.0; % Wave number in z
 [U,Phi] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f);
 [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma,sigma_w, W, U,Phi, By, f, alpha);
 
+[zd,wd]=zwgl(N-1);
 
 
 % Plot steady
@@ -92,8 +93,8 @@ surf(x,y,abs(U));
 shading interp;
 title('v');
 
-P = reshape(pvec,N+1,N+1);
-[y,x] = meshgrid(z,z);
+P = reshape(pvec,N-1,N-1);
+[y,x] = meshgrid(zd,zd);
 figure;
 surf(x,y,abs(P));
 shading interp;
@@ -125,7 +126,7 @@ for e = 1:9
     X = (xb-xa)/2 * (Zx + 1) + xa;
     Y = (yb-ya)/2 * (Zy + 1) + ya;
 
-    surf(X, Y, Phie, 'EdgeColor','none');
+    surf(X, Y, abs(Phie), 'EdgeColor','none');
 end
 
 shading interp;

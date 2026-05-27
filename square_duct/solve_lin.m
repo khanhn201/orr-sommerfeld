@@ -1,5 +1,3 @@
-% Add pressure and phi restriction? or subtract mean out every step
-% Solve eigenvalue with Schur compl?
 function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W, U,Phi, By, f, alpha)
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
   Nelx = 3;
@@ -15,40 +13,52 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
 
   Ih = speye(N+1);
   R = Ih(2:end-1,:);
-  R2D = kron(R, R);
+  R2D = kron(R, R); % Dirichlet min/max x and min/max y for velocity
 
-  Ih = speye(N+1);
-  Rp = kron(Ih, Ih);
-  Rp = Rp(2:end,:);
 
   B2D = kron(Bh,Bh);
   A2D = kron(Bh,Ah) + kron(Ah,Bh);
   DX = kron(Ih,Dh);
   DY = kron(Dh,Ih);
 
+  [zd,wd]=zwgl(N-1); Bd=diag(wd); % For pressure
+  % [zd,wd]=zwgll(N); Bd=diag(wd); % For pressure
+  JM=interp_mat(zd,z);
+  JMT=interp_mat(z,zd);
+  JM2D = kron(JM,JM);
+  JMT2D = kron(JMT,JMT);
+  Bd2D = kron(Bd,Bd);
+  Ihp = speye(size(zd,1));
+  Rp = kron(Ihp, Ihp);
+  Rp = Rp(2:end,:);  % Dirichlet first node for pressure
+
+  Dph = deriv_mat(zd);
+  DpX = kron(Ihp,Dph);
+  DpY = kron(Dph,Ihp);
+
 
   % Velocity part
-  Kuu = 1i*alpha*rho*B2D*diag(U) + mu*A2D + sigma*By^2*B2D;
+  Kuu = 1i*alpha*rho*B2D*diag(U) + mu*A2D + alpha^2*B2D + sigma*By^2*B2D;
   Kuphi = -1i*alpha*sigma*By*B2D;
-  Kup = B2D*DX;
+  Kup = B2D*JMT2D*DpX;
   Mu = -rho*B2D;
 
-  Kvv = 1i*alpha*rho*B2D*diag(U) + mu*A2D;
+  Kvv = 1i*alpha*rho*B2D*diag(U) + mu*A2D + alpha^2*B2D;
   Kvphi = 0*B2D;
-  Kvp = B2D*DY;
+  Kvp = B2D*JMT2D*DpY;
   Mv = -rho*B2D;
 
 
-  Kww = 1i*alpha*rho*B2D*diag(U) + mu*A2D + sigma*By^2*B2D;
-  Kwu = rho*B2D*DX*diag(U);
-  Kwv = rho*B2D*DY*diag(U);
+  Kww = 1i*alpha*rho*B2D*diag(U) + mu*A2D + alpha^2*B2D + sigma*By^2*B2D;
+  Kwu = rho*B2D*diag(DX*U);
+  Kwv = rho*B2D*diag(DY*U);
   Kwphi = sigma*By*B2D*DX;
-  Kwp = 1i*alpha*B2D;
+  Kwp = 1i*alpha*B2D*JMT2D;
   Mw = -rho*B2D;
 
-  Kpu = B2D*DX;
-  Kpv = B2D*DY;
-  Kpw = 1i*alpha*B2D;
+  Kpu = Bd2D*JM2D*DX;
+  Kpv = Bd2D*JM2D*DY;
+  Kpw = 1i*alpha*Bd2D*JM2D;
 
   Kphiu = 1i*alpha*sigma*By*B2D;
   Kphiv = 0*B2D;
@@ -99,7 +109,7 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
       e = (ey-1)*Nelx + ex;
       idx_start = (e-1)*n2+1;
       idx_end = e*n2;
-      Kphiphi(idx_start:idx_end,idx_start:idx_end) = sigmal*(Ax+Ay);
+      Kphiphi(idx_start:idx_end,idx_start:idx_end) = sigmal*(Ax+Ay) + alpha^2*B2D;
   end
   end
 
@@ -110,33 +120,52 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
 
   [Q,glo_num]=set_tp_semq(Nelx,Nely,N);
   Rphi2D = speye(size(Q,2));
-  Rphi2D = Rphi2D(2:end,:);
+  Rphi2D = Rphi2D(2:end,:); % Dirichlet first node for phi
 
+  KPhiU = Rphi2D*Q'*Kphiu_global;
+  KUPhi = Kuphi_global*Q*Rphi2D';
+  KPhiPhi = Rphi2D*Q'*Kphiphi*Q*Rphi2D';
   K = [
-    KVV, KVP, Kuphi_global*Q*Rphi2D';
-    KPV, 0*Rp*B2D*Rp', zeros(size(KPV,1), size(Rphi2D',2));
-    Rphi2D*Q'*Kphiu_global, zeros(size(Rphi2D,1),size(KVP,2)), Rphi2D*Q'*Kphiphi*Q*Rphi2D';
+    KVV  , KVP                              , KUPhi;
+    KPV  , 0*Rp*Bd2D*Rp'                     , zeros(size(KPV,1), size(Rphi2D',2));
+    KPhiU, zeros(size(Rphi2D,1),size(KVP,2)), KPhiPhi;
   ];
   npphi = size(K,1)-size(MV,1);
   M = [
     MV                     ,zeros(size(MV,1),npphi);
     zeros(npphi,size(MV,1)),zeros(npphi,npphi);
   ];
-  pinvM = pinv(K);
+  % pinvM = pinv(K);
   % [vecs, gamma] = eigs(pinvM*K, 5, "lr");
   % gamma = diag(gamma)
   % [vecs, gamma] = eig(pinvM*K, 'vector');
   
-  [vecs, gamma] = eigs(pinvM*K, pinvM*M, 5, 'lr');
+  % [vecs, gamma] = eigs(pinvM*K, pinvM*M, 5, 'lr');
   % size(vecs)
+
+  KVV2 = KVV - KUPhi*(KPhiPhi \ KPhiU);
+  M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
+
+  M3 = MV - KVP*M2;
+
+
+  % [vecs, gamma] = eigs(KVV2, M3, 5, "lr");
+  % gamma = diag(gamma)
+  [vecs, gamma] = eig(KVV2, M3, 'vector');
+  gamma
+  idx = (real(gamma) >= -10) & (real(gamma) <= 10);
+  gamma = gamma(idx);
+  vecs  = vecs(:, idx);
+
   c = gamma*1i/alpha;
   [~, unstable] = max(imag(c));
+  c(unstable)
   vu = vecs(:, unstable);
-  vu = vu(:);
-  
   uvec   =      R2D'*vu(0*(N-1)^2+1       :1*(N-1)^2        );
   vvec   =      R2D'*vu(1*(N-1)^2+1       :2*(N-1)^2        );
   wvec   =      R2D'*vu(2*(N-1)^2+1       :3*(N-1)^2        );
-  pvec   =       Rp'*vu(3*(N-1)^2+1       :3*(N-1)^2+(N+1)^2-1);
-  phivec = Q*Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
+  % pvec   =       Rp'*vu(3*(N-1)^2+1       :3*(N-1)^2+(N+1)^2-1);
+  % phivec = Q*Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
+  pvec = Rp'*gamma(unstable)*M2*vu;
+  phivec = -Q*Rphi2D'*(KPhiPhi \ KPhiU)*vu;
 end

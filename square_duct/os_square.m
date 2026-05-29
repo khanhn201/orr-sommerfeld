@@ -9,19 +9,20 @@ set(0, "defaultLineLineWidth", 2)
 N = 20;
 
 
-Re = 50000;
+Re = 1e5;
 Ha = 10;
 
 rho = 1;
 mu = 1/Re;
 sigma = 1.0;
-sigma_w = 0.1;
+sigma_w = 0.53308;
 L = 1.0;
-W = 0.1;
+W = 0.1315;
 
 By = 1.0;
-By = Ha/sqrt(sigma/mu)/L;
+% By = Ha/sqrt(sigma/mu)/L;
 f = 2.0/Re; % Acceleration or pressure gradient
+f = 1.0;
 
 
 alpha = 1.0; % Wave number in z

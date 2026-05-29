@@ -30,7 +30,7 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
   Bd2D = kron(Bd,Bd);
   Ihp = speye(size(zd,1));
   Rp = kron(Ihp, Ihp);
-  Rp = Rp(2:end,:);  % Dirichlet first node for pressure
+  % Rp = Rp(2:end,:);  % Dirichlet first node for pressure
 
   Dph = deriv_mat(zd);
   DpX = kron(Ihp,Dph);
@@ -40,12 +40,14 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
   % Velocity part
   Kuu = 1i*alpha*rho*B2D*diag(U) + mu*A2D + alpha^2*B2D + sigma*By^2*B2D;
   Kuphi = -1i*alpha*sigma*By*B2D;
-  Kup = B2D*JMT2D*DpX;
+  % Kup = B2D*JMT2D*DpX;
+  Kup = -DX'*B2D*JMT2D;
   Mu = -rho*B2D;
 
   Kvv = 1i*alpha*rho*B2D*diag(U) + mu*A2D + alpha^2*B2D;
   Kvphi = 0*B2D;
-  Kvp = B2D*JMT2D*DpY;
+  % Kvp = B2D*JMT2D*DpY;
+  Kvp = -DY'*B2D*JMT2D;
   Mv = -rho*B2D;
 
 
@@ -53,12 +55,16 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
   Kwu = rho*B2D*diag(DX*U);
   Kwv = rho*B2D*diag(DY*U);
   Kwphi = sigma*By*B2D*DX;
-  Kwp = 1i*alpha*B2D*JMT2D;
+  % Kwp = 1i*alpha*B2D*JMT2D;
+  Kwp = -1i*alpha*B2D*JMT2D;
   Mw = -rho*B2D;
 
-  Kpu = Bd2D*JM2D*DX;
-  Kpv = Bd2D*JM2D*DY;
-  Kpw = 1i*alpha*Bd2D*JM2D;
+  % Kpu = Bd2D*JM2D*DX;
+  % Kpv = Bd2D*JM2D*DY;
+  % Kpw = 1i*alpha*Bd2D*JM2D;
+  Kpu = -Bd2D*JM2D*DX;
+  Kpv = -Bd2D*JM2D*DY;
+  Kpw = -1i*alpha*Bd2D*JM2D;
 
   Kphiu = 1i*alpha*sigma*By*B2D;
   Kphiv = 0*B2D;
@@ -120,7 +126,7 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
 
   [Q,glo_num]=set_tp_semq(Nelx,Nely,N);
   Rphi2D = speye(size(Q,2));
-  Rphi2D = Rphi2D(2:end,:); % Dirichlet first node for phi
+  % Rphi2D = Rphi2D(2:end,:); % Dirichlet first node for phi
 
   KPhiU = Rphi2D*Q'*Kphiu_global;
   KUPhi = Kuphi_global*Q*Rphi2D';
@@ -144,18 +150,34 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin(N, rho, mu, sigma, sigma_w, W,
   % size(vecs)
 
   KVV2 = KVV - KUPhi*(KPhiPhi \ KPhiU);
+
   M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
 
   M3 = MV - KVP*M2;
-
+  S = KPV*(KVV2\KVP);
+  Sinv = inv(S);
+  tmp = eye(size(KUPhi,1)) - KVP*Sinv*(KPV*inv(KVV2));
 
   % [vecs, gamma] = eigs(KVV2, M3, 5, "lr");
   % gamma = diag(gamma)
+  % M4 = KVV2\M3;
   [vecs, gamma] = eig(KVV2, M3, 'vector');
+  % gamma = 1./gamma
+  res = zeros(size(gamma));
+
+  for i = 1:length(gamma)
+      v = vecs(:,i);
+      r = KVV2*v - gamma(i)*M3*v;
+      res(i) = norm(r) / ...
+          (norm(KVV2*v) + norm(M3*v) + eps);
+  end
+
+  good = res < 1e-6;
+
+  gamma = gamma(good);
+  vecs  = vecs(:,good);
+  res   = res(good);
   gamma
-  idx = (real(gamma) >= -10) & (real(gamma) <= 10);
-  gamma = gamma(idx);
-  vecs  = vecs(:, idx);
 
   c = gamma*1i/alpha;
   [~, unstable] = max(imag(c));

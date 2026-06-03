@@ -1,12 +1,14 @@
-function [uvec,phivec] = solve_steady(N, mu, sigma, By, f)
+function [uvec,phivec,f] = solve_steady(N, mu, sigma, By)
+  f = 1;
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
   Ih = speye(N+1);
   R = Ih(2:end-1,:);
   
   n = size(R, 1);
 
-  Rphi2D = kron(Ih, Ih);
-  Rphi2D = Rphi2D(2:end,:);
+  Rphi = Ih(2:end-1,:); % Perfectly conducting
+  Rphi2D = kron(Rphi, Ih);
+  % Rphi2D = Rphi2D(2:end,:);
   R2D = kron(R, R);
   B2D = kron(Bh,Bh);
   A2D = kron(Bh,Ah) + kron(Ah,Bh);
@@ -22,15 +24,31 @@ function [uvec,phivec] = solve_steady(N, mu, sigma, By, f)
     Rphi2D*B2D*zeros((N+1)^2,1)
   ];
 
-  % M = spdiags(diag(K),0,size(K,1),size(K,2));
-  % restart = [];
-  % tol     = 1e-10;
-  % maxit   = 200;
-  % [sol,flag,relres,iter,resvec] = gmres( ...
-  %     K, rhs, restart, tol, maxit, M);
-  % relres
-  % sol = pcg (K, rhs, tol, maxit);
-  sol = K\rhs;
+  % sol = K\rhs;
+  M = spdiags(diag(K),0,size(K,1),size(K,2));
+  restart = [];
+  tol     = 1e-8;
+  maxit   = min(2000, N^2);
+  [sol,flag,relres,iter,resvec] = gmres( ...
+      K, rhs, restart, tol, maxit, M);
+  iter
+  relres
+
+
+  uvec = R2D'*sol(1:n*n);
+  phivec = Rphi2D'*sol(n*n+1:end);
+  umax = max(uvec);
+  uvec = uvec/umax;
+  phivec = phivec/umax;
+  f = f/umax;
+  rhs = [
+    R2D*B2D*(f*ones((N+1)^2, 1));
+    Rphi2D*B2D*zeros((N+1)^2,1)
+  ];
+  [sol,flag,relres,iter,resvec] = gmres( ...
+      K, rhs, restart, tol, maxit, M);
+  iter
+  relres
 
 
   uvec = R2D'*sol(1:n*n);

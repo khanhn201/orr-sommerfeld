@@ -59,7 +59,7 @@ function [uvec,phivec] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f)
 
   [Q,glo_num]=set_tp_semq(Nelx,Nely,N);
   Rphi2D = speye(size(Q,2));
-  Rphi2D = Rphi2D(2:end,:);
+  % Rphi2D = Rphi2D(2:end,:);
   % spy(Q)
 
   K = [
@@ -73,10 +73,11 @@ function [uvec,phivec] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f)
   % sol = K\rhs;
   M = spdiags(diag(K),0,size(K,1),size(K,2));
   restart = [];
-  tol     = 1e-6;
-  maxit   = 200;
+  tol     = 1e-8;
+  maxit   = 2000;
   [sol,flag,relres,iter,resvec] = gmres( ...
       K, rhs, restart, tol, maxit, M);
+  iter
   relres
 
   uvec = R2D'*sol(1:(N-1)^2);

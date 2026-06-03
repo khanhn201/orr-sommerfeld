@@ -1,11 +1,16 @@
-function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi, By, alpha)
+function [uvec,vvec,wvec,pvec,phivec] = solve_lin_wall(N, rho, mu, sigma, sigma_w, W, U,Phi, By, f, alpha)
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
-  Nelx = 1;
-  Nely = 1;
+  Nelx = 3;
+  Nely = 3;
   Nelem = Nelx*Nely;
 
   n = N + 1;
   n2 = n^2;
+  Ng = n2 * 13;  % total: 3 for v, 1 for p, 9 for phi
+
+  K = zeros(Ng, Ng);
+  M = zeros(Ng, 1);
+
   Ih = speye(N+1);
   R = Ih(2:end-1,:);
   R2D = kron(R, R); % Dirichlet min/max x and min/max y for velocity
@@ -17,7 +22,7 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
   DY = kron(Dh,Ih);
 
   [zd,wd]=zwgl(N-1); Bd=diag(wd); % For pressure
-
+  % [zd,wd]=zwgll(N); Bd=diag(wd); % For pressure
   JM=interp_mat(zd,z);
   JMT=interp_mat(z,zd);
   JM2D = kron(JM,JM);
@@ -88,16 +93,42 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
   ];
 
   % phi part
-  Kphiphi = sigma*A2D + sigma*alpha^2*B2D;
+  for ey = 1:Nely
+  for ex = 1:Nelx
+      Ih = speye(N+1);
 
-  Rphi = Ih(2:end-1,:); % Perfectly conducting
-  Rphi2D = kron(Rphi, Ih);
-  % Rphi2D = Rphi2D(1:end,:);
+      sigmal = sigma;
+      if ey != 2 || ex != 2
+         sigmal = sigma_w;
+      end
+      Ax = kron(Bh,Ah);
+      Ay = kron(Ah,Bh);
+      if ex != 2
+         Ax = 1/W*Ax;
+      end
+      if ey != 2
+         Ay = 1/W*Ay;
+      end
 
+      e = (ey-1)*Nelx + ex;
+      idx_start = (e-1)*n2+1;
+      idx_end = e*n2;
+      Kphiphi(idx_start:idx_end,idx_start:idx_end) = sigmal*(Ax+Ay) + sigmal*alpha^2*B2D;
+  end
+  end
 
-  KPhiU = Rphi2D*KPhiV;
-  KUPhi = KVPhi*Rphi2D';
-  KPhiPhi = Rphi2D*Kphiphi*Rphi2D';
+  Kuphi_global = zeros(3*size(R2D,1), n2*9);
+  Kphiu_global = zeros(n2*9, 3*size(R2D,1));
+  Kuphi_global(:, n2*4+1:n2*5) = KVPhi;
+  Kphiu_global(n2*4+1:n2*5, :) = KPhiV;
+
+  [Q,glo_num]=set_tp_semq(Nelx,Nely,N);
+  Rphi2D = speye(size(Q,2));
+  % Rphi2D = Rphi2D(2:end,:); % Dirichlet first node for phi
+
+  KPhiU = Rphi2D*Q'*Kphiu_global;
+  KUPhi = Kuphi_global*Q*Rphi2D';
+  KPhiPhi = Rphi2D*Q'*Kphiphi*Q*Rphi2D';
   K = [
     KVV  , KVP                              , KUPhi;
     KPV  , 0*Rp*Bd2D*Rp'                     , zeros(size(KPV,1), size(Rphi2D',2));
@@ -108,8 +139,16 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
     MV                     ,zeros(size(MV,1),npphi);
     zeros(npphi,size(MV,1)),zeros(npphi,npphi);
   ];
+  % pinvM = pinv(K);
+  % [vecs, gamma] = eigs(pinvM*K, 5, "lr");
+  % gamma = diag(gamma)
+  % [vecs, gamma] = eig(pinvM*K, 'vector');
+  
+  % [vecs, gamma] = eigs(pinvM*K, pinvM*M, 5, 'lr');
+  % size(vecs)
 
   KVV2 = KVV - KUPhi*(KPhiPhi \ KPhiU);
+
   M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
 
   M3 = MV - KVP*M2;
@@ -120,22 +159,6 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
   % [vecs, gamma] = eigs(KVV2, M3, 5, "lr");
   % gamma = diag(gamma)
   % M4 = KVV2\M3;
-  % [i,j,v] = find(KVV2);
-  % rv = real(v);
-  % iv = imag(v);
-  % save('A_i.dat','i','-ascii');
-  % save('A_j.dat','j','-ascii');
-  % save('A_v_real.dat','rv','-ascii');
-  % save('A_v_imag.dat','iv','-ascii');
-  % [i,j,v] = find(M3);
-  % rv = real(v);
-  % iv = imag(v);
-  % save('B_i.dat','i','-ascii');
-  % save('B_j.dat','j','-ascii');
-  % save('B_v_real.dat','rv','-ascii');
-  % save('B_v_imag.dat','iv','-ascii');
-
-
   [vecs, gamma] = eig(KVV2, M3, 'vector');
   % gamma = 1./gamma
   res = zeros(size(gamma));
@@ -152,43 +175,18 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
   gamma = gamma(good);
   vecs  = vecs(:,good);
   res   = res(good);
+  % gamma
 
-  [~, unstable] = max(real(gamma));
-  gamma = gamma(unstable);
+  c = gamma*1i/alpha;
+  plot(real(c), imag(c), 'o');
+  [~, unstable] = max(imag(c));
+  c(unstable)
   vu = vecs(:, unstable);
   uvec   =      R2D'*vu(0*(N-1)^2+1       :1*(N-1)^2        );
   vvec   =      R2D'*vu(1*(N-1)^2+1       :2*(N-1)^2        );
   wvec   =      R2D'*vu(2*(N-1)^2+1       :3*(N-1)^2        );
   % pvec   =       Rp'*vu(3*(N-1)^2+1       :3*(N-1)^2+(N+1)^2-1);
-  % phivec = Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
-  pvec = Rp'*gamma*M2*vu;
-  phivec = -Rphi2D'*(KPhiPhi \ KPhiU)*vu;
-
-
-  check_error(N, alpha, uvec,vvec,wvec,pvec,phivec, By);
-end
-
-function check_error(N, alpha, uvec, vvec, wvec, pvec, phivec, By)
-  [Ah,Bh,Ch,Dh,z,w] = semhat(N);
-  [zd,wd]=zwgl(N-1); Bd=diag(wd); % For pressure
-  B2D = kron(Bh,Bh);
-  A2D = kron(Bh,Ah) + kron(Ah,Bh);
-
-
-  Bd2D = kron(Bd,Bd);
-  JMT=interp_mat(z,zd);
-  JMT2D = kron(JMT,JMT);
-  JM=interp_mat(zd,z);
-  JM2D = kron(JM,JM);
-
-  Ih = speye(N+1);
-  DX = kron(Ih,Dh);
-  DY = kron(Dh,Ih);
-  div = DX*uvec + DY*vvec + 1i*alpha*wvec;
-  div = norm(Bd2D*JM2D*div)
-
-
-  philap = - DX'*B2D*DX*phivec - DY'*B2D*DY*phivec -alpha^2*B2D*phivec + By*B2D*DX*wvec - By*1i*alpha*B2D*uvec;
-  % philap = -A2D*phivec -alpha^2*B2D*phivec + By*B2D*DX*wvec - By*1i*alpha*B2D*uvec;
-  philap = norm(philap)
+  % phivec = Q*Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
+  pvec = Rp'*gamma(unstable)*M2*vu;
+  phivec = -Q*Rphi2D'*(KPhiPhi \ KPhiU)*vu;
 end

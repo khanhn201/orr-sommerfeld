@@ -1,4 +1,4 @@
-function [uvec,phivec] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f)
+function [uvec,phivec,f] = solve_steady_wall(N, mu, sigma, sigma_w, W, By)
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
   Nelx = 3;
   Nely = 3;
@@ -36,14 +36,22 @@ function [uvec,phivec] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f)
       if ey != 2 || ex != 2
          sigmal = sigma_w;
       end
-      Ax = kron(Bh,Ah);
-      Ay = kron(Ah,Bh);
+      Bhx = Bh;
+      Bhy = Bh;
+      Ahx = Ah;
+      Ahy = Ah;
+
       if ex != 2
-         Ax = 1/W*Ax;
+         Bhx = Bhx*W;
+         Ahx = Ahx/W;
       end
       if ey != 2
-         Ay = 1/W*Ay;
+         Bhy = Bhy*W;
+         Ahy = Ahy/W;
       end
+
+      Ax = kron(Bhy,Ahx);
+      Ay = kron(Ahy,Bhx);
 
       e = (ey-1)*Nelx + ex;
       idx_start = (e-1)*n2+1;
@@ -59,16 +67,14 @@ function [uvec,phivec] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f)
 
   [Q,glo_num]=set_tp_semq(Nelx,Nely,N);
   Rphi2D = speye(size(Q,2));
-  % Rphi2D = Rphi2D(2:end,:);
-  % spy(Q)
 
   K = [
     R2D*Kuu*R2D', R2D*Kuphi_global*Q*Rphi2D';
     Rphi2D*Q'*Kphiu_global*R2D', Rphi2D*Q'*Kphiphi*Q*Rphi2D';
   ];
   rhs = [
-    R2D*B2D*(f*ones(n2, 1));
-    Rphi2D*Q'*zeros(n2*9,1)
+    R2D*B2D*ones(n2, 1);
+    Rphi2D*Q'*zeros(n2*9, 1)
   ];
   % sol = K\rhs;
   M = spdiags(diag(K),0,size(K,1),size(K,2));
@@ -82,4 +88,8 @@ function [uvec,phivec] = solve_steady_wall(N, mu, sigma, sigma_w, W, By, f)
 
   uvec = R2D'*sol(1:(N-1)^2);
   phivec = Q*Rphi2D'*sol((N-1)^2+1:end);
+  umax = max(uvec);
+  uvec = uvec/umax;
+  phivec = phivec/umax;
+  f = 1.0/umax;
 end

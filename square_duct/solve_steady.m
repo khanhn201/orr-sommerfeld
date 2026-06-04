@@ -1,5 +1,4 @@
 function [uvec,phivec,f] = solve_steady(N, mu, sigma, By)
-  f = 1;
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
   Ih = speye(N+1);
   R = Ih(2:end-1,:);
@@ -20,7 +19,7 @@ function [uvec,phivec,f] = solve_steady(N, mu, sigma, By)
   ];
 
   rhs = [
-    R2D*B2D*(f*ones((N+1)^2, 1));
+    R2D*B2D*ones((N+1)^2, 1);
     Rphi2D*B2D*zeros((N+1)^2,1)
   ];
 
@@ -40,5 +39,5 @@ function [uvec,phivec,f] = solve_steady(N, mu, sigma, By)
   umax = max(uvec);
   uvec = uvec/umax;
   phivec = phivec/umax;
-  f = f/umax;
+  f = 1.0/umax;
 end

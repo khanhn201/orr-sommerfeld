@@ -1,4 +1,4 @@
-load("results.mat")
+load("modeI.mat")
 U = reshape(uvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;

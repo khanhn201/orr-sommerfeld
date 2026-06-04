@@ -1,4 +1,4 @@
-function [uvec,vvec,wvec,pvec,phivec] = solve_lin_wall(N, rho, mu, sigma, sigma_w, W, U,Phi, By, f, alpha)
+function [uvec,vvec,wvec,pvec,phivec] = solve_lin_wall(N, rho, mu, sigma, sigma_w, W, U,Phi, By, alpha)
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
   Nelx = 3;
   Nely = 3;
@@ -101,14 +101,22 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin_wall(N, rho, mu, sigma, sigma_
       if ey != 2 || ex != 2
          sigmal = sigma_w;
       end
-      Ax = kron(Bh,Ah);
-      Ay = kron(Ah,Bh);
+      Bhx = Bh;
+      Bhy = Bh;
+      Ahx = Ah;
+      Ahy = Ah;
+
       if ex != 2
-         Ax = 1/W*Ax;
+         Bhx = Bhx*W;
+         Ahx = Ahx/W;
       end
       if ey != 2
-         Ay = 1/W*Ay;
+         Bhy = Bhy*W;
+         Ahy = Ahy/W;
       end
+
+      Ax = kron(Bhy,Ahx);
+      Ay = kron(Ahy,Bhx);
 
       e = (ey-1)*Nelx + ex;
       idx_start = (e-1)*n2+1;
@@ -152,9 +160,6 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin_wall(N, rho, mu, sigma, sigma_
   M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
 
   M3 = MV - KVP*M2;
-  S = KPV*(KVV2\KVP);
-  Sinv = inv(S);
-  tmp = eye(size(KUPhi,1)) - KVP*Sinv*(KPV*inv(KVV2));
 
   % [vecs, gamma] = eigs(KVV2, M3, 5, "lr");
   % gamma = diag(gamma)
@@ -177,16 +182,16 @@ function [uvec,vvec,wvec,pvec,phivec] = solve_lin_wall(N, rho, mu, sigma, sigma_
   res   = res(good);
   % gamma
 
-  c = gamma*1i/alpha;
-  plot(real(c), imag(c), 'o');
-  [~, unstable] = max(imag(c));
-  c(unstable)
+  [re_sorted, idx] = sort(real(gamma), 'descend');
+  disp(gamma(idx(1:min(5,end))))
+  [~, unstable] = max(real(gamma));
+  gamma = gamma(unstable);
   vu = vecs(:, unstable);
   uvec   =      R2D'*vu(0*(N-1)^2+1       :1*(N-1)^2        );
   vvec   =      R2D'*vu(1*(N-1)^2+1       :2*(N-1)^2        );
   wvec   =      R2D'*vu(2*(N-1)^2+1       :3*(N-1)^2        );
   % pvec   =       Rp'*vu(3*(N-1)^2+1       :3*(N-1)^2+(N+1)^2-1);
   % phivec = Q*Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
-  pvec = Rp'*gamma(unstable)*M2*vu;
+  pvec = Rp'*gamma*M2*vu;
   phivec = -Q*Rphi2D'*(KPhiPhi \ KPhiU)*vu;
 end

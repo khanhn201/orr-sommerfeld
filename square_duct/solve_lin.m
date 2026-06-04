@@ -113,9 +113,6 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
   M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
 
   M3 = MV - KVP*M2;
-  S = KPV*(KVV2\KVP);
-  Sinv = inv(S);
-  tmp = eye(size(KUPhi,1)) - KVP*Sinv*(KPV*inv(KVV2));
 
   % [vecs, gamma] = eigs(KVV2, M3, 5, "lr");
   % gamma = diag(gamma)

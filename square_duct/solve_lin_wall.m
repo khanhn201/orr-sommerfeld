@@ -1,4 +1,4 @@
-function [uvec,vvec,wvec,pvec,phivec] = solve_lin_wall(N, rho, mu, sigma, sigma_w, W, U,Phi, By, alpha)
+function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, sigma_w, W, U,Phi, By, alpha)
   [Ah,Bh,Ch,Dh,z,w] = semhat(N);
   Nelx = 3;
   Nely = 3;

@@ -41,16 +41,4 @@ function [uvec,phivec,f] = solve_steady(N, mu, sigma, By)
   uvec = uvec/umax;
   phivec = phivec/umax;
   f = f/umax;
-  rhs = [
-    R2D*B2D*(f*ones((N+1)^2, 1));
-    Rphi2D*B2D*zeros((N+1)^2,1)
-  ];
-  [sol,flag,relres,iter,resvec] = gmres( ...
-      K, rhs, restart, tol, maxit, M);
-  iter
-  relres
-
-
-  uvec = R2D'*sol(1:n*n);
-  phivec = Rphi2D'*sol(n*n+1:end);
 end

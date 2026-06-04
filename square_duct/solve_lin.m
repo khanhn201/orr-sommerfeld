@@ -153,6 +153,8 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
   vecs  = vecs(:,good);
   res   = res(good);
 
+  [re_sorted, idx] = sort(real(gamma), 'descend');
+  disp(gamma(idx(1:min(5,end))))
   [~, unstable] = max(real(gamma));
   gamma = gamma(unstable);
   vu = vecs(:, unstable);

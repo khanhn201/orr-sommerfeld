@@ -114,27 +114,8 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
 
   M3 = MV - KVP*M2;
 
-  % [vecs, gamma] = eigs(KVV2, M3, 5, "lr");
-  % gamma = diag(gamma)
-  % M4 = KVV2\M3;
-  % [i,j,v] = find(KVV2);
-  % rv = real(v);
-  % iv = imag(v);
-  % save('A_i.dat','i','-ascii');
-  % save('A_j.dat','j','-ascii');
-  % save('A_v_real.dat','rv','-ascii');
-  % save('A_v_imag.dat','iv','-ascii');
-  % [i,j,v] = find(M3);
-  % rv = real(v);
-  % iv = imag(v);
-  % save('B_i.dat','i','-ascii');
-  % save('B_j.dat','j','-ascii');
-  % save('B_v_real.dat','rv','-ascii');
-  % save('B_v_imag.dat','iv','-ascii');
-
 
   [vecs, gamma] = eig(KVV2, M3, 'vector');
-  % gamma = 1./gamma
   res = zeros(size(gamma));
 
   for i = 1:length(gamma)
@@ -158,8 +139,6 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin(N, rho, mu, sigma, U,Phi
   uvec   =      R2D'*vu(0*(N-1)^2+1       :1*(N-1)^2        );
   vvec   =      R2D'*vu(1*(N-1)^2+1       :2*(N-1)^2        );
   wvec   =      R2D'*vu(2*(N-1)^2+1       :3*(N-1)^2        );
-  % pvec   =       Rp'*vu(3*(N-1)^2+1       :3*(N-1)^2+(N+1)^2-1);
-  % phivec = Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
   pvec = Rp'*gamma*M2*vu;
   phivec = -Rphi2D'*(KPhiPhi \ KPhiU)*vu;
 

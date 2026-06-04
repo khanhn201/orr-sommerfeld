@@ -147,25 +147,13 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
     MV                     ,zeros(size(MV,1),npphi);
     zeros(npphi,size(MV,1)),zeros(npphi,npphi);
   ];
-  % pinvM = pinv(K);
-  % [vecs, gamma] = eigs(pinvM*K, 5, "lr");
-  % gamma = diag(gamma)
-  % [vecs, gamma] = eig(pinvM*K, 'vector');
-  
-  % [vecs, gamma] = eigs(pinvM*K, pinvM*M, 5, 'lr');
-  % size(vecs)
 
   KVV2 = KVV - KUPhi*(KPhiPhi \ KPhiU);
 
   M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
 
   M3 = MV - KVP*M2;
-
-  % [vecs, gamma] = eigs(KVV2, M3, 5, "lr");
-  % gamma = diag(gamma)
-  % M4 = KVV2\M3;
   [vecs, gamma] = eig(KVV2, M3, 'vector');
-  % gamma = 1./gamma
   res = zeros(size(gamma));
 
   for i = 1:length(gamma)
@@ -190,8 +178,6 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
   uvec   =      R2D'*vu(0*(N-1)^2+1       :1*(N-1)^2        );
   vvec   =      R2D'*vu(1*(N-1)^2+1       :2*(N-1)^2        );
   wvec   =      R2D'*vu(2*(N-1)^2+1       :3*(N-1)^2        );
-  % pvec   =       Rp'*vu(3*(N-1)^2+1       :3*(N-1)^2+(N+1)^2-1);
-  % phivec = Q*Rphi2D'*vu(3*(N-1)^2+(N+1)^2 :end              );
   pvec = Rp'*gamma*M2*vu;
   phivec = -Q*Rphi2D'*(KPhiPhi \ KPhiU)*vu;
 end

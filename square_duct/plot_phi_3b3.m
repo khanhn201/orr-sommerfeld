@@ -1,4 +1,5 @@
-function plot_phi_3b3(N, phivec, W, z)
+function plot_phi_3b3(N, phivec, W)
+[Ah,Bh,Ch,Dh,z,w] = semhat(N);
 Nx = 3;
 Ny = 3;
 n  = N + 1;
@@ -25,10 +26,9 @@ for e = 1:9
     X = (xb-xa)/2 * (Zx + 1) + xa;
     Y = (yb-ya)/2 * (Zy + 1) + ya;
 
-    surf(X, Y, real(Phie), 'EdgeColor','none');
+    surf(X, Y, real(Phie));
 end
 
-shading interp;
 title('\phi');
 colorbar;
 view(3);

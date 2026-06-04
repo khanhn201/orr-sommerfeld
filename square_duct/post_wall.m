@@ -1,4 +1,4 @@
-load("modeII.mat")
+load("modeII_wall.mat")
 U = reshape(uvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;
@@ -20,11 +20,7 @@ P = reshape(pvec,N-1,N-1);
 figure;
 surf(x,y,abs(P));
 title('p');
-Phi = reshape(phivec,N+1,N+1);
-[y,x] = meshgrid(z,z);
-figure;
-surf(x,y,abs(Phi));
-title('phi');
+plot_phi_3b3(N, phivec, W)
 
 Nf = 10; % lx1
 el_pos = [-1.0, -0.95, -0.9, -0.5, -0.25, 0.0, 0.25, 0.5, 0.9, 0.95, 1.0];
@@ -40,8 +36,8 @@ uf = [];
 vf = [];
 wf = [];
 phif = [];
-wBasef = [];
-phiBasef = [];
+% wBasef = [];
+% phiBasef = [];
 for j=1:nely
 for i=1:nely
     zf((i-1)*Nf+1:i*Nf) = el_center(i) + zff*delta_el(i)/2.0;
@@ -53,9 +49,9 @@ for i=1:nely
     uf   = [uf; J2D*uvec];
     vf   = [vf; J2D*vvec];
     wf   = [wf; J2D*wvec];
-    phif = [phif; J2D*phivec];
+    % phif = [phif; J2D*phivec];
     wBasef = [wBasef; J2D*U_base];
-    phiBasef = [phiBasef; J2D*Phi_base];
+    % phiBasef = [phiBasef; J2D*Phi_base];
 
 end
 end

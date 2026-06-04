@@ -26,7 +26,7 @@ figure;
 surf(x,y,abs(Phi));
 title('phi');
 
-Nf = 8; % lx1
+Nf = 10; % lx1
 el_pos = [-1.0, -0.95, -0.9, -0.5, -0.25, 0.0, 0.25, 0.5, 0.9, 0.95, 1.0];
 
 nely = length(el_pos) - 1;

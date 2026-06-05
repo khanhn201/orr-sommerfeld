@@ -76,13 +76,11 @@ function [uvec,phivec,f] = solve_steady_wall(N, mu, sigma, sigma_w, W, By)
     R2D*B2D*ones(n2, 1);
     Rphi2D*Q'*zeros(n2*9, 1)
   ];
-  % sol = K\rhs;
-  M = spdiags(diag(K),0,size(K,1),size(K,2));
-  restart = [];
-  tol     = 1e-8;
-  maxit   = 2000;
-  [sol,flag,relres,iter,resvec] = gmres( ...
-      K, rhs, restart, tol, maxit, M);
+
+  K = sparse(K);
+  K_shift = max(sum(abs(K),2)./diag(K))-2;
+  L = ichol(K,struct('michol','on','diagcomp',K_shift));
+  [sol, flag, relres, iter] = pcg(K, rhs, 1e-8, 2000,L,L');
   iter
   relres
 

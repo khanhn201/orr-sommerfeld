@@ -124,8 +124,8 @@ if ndim == 3
 	    for iel = elmap
 	        for idim = (1:var(ivar))+idim0
 	            %fwrite(outfile,data(iel,:,idim),realtype);
-					fwrite(outfile, min(data(iel,:,idim)), '*float32');
-					fwrite(outfile, max(data(iel,:,idim)), '*float32');
+					fwrite(outfile, min(data(iel,:,idim)), 'float32');
+					fwrite(outfile, max(data(iel,:,idim)), 'float32');
 	        end
 	    end
 	end

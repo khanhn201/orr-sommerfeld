@@ -137,38 +137,44 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
   KPhiU = Rphi2D*Q'*Kphiu_global;
   KUPhi = Kuphi_global*Q*Rphi2D';
   KPhiPhi = Rphi2D*Q'*Kphiphi*Q*Rphi2D';
-  K = [
-    KVV  , KVP                              , KUPhi;
-    KPV  , 0*Rp*Bd2D*Rp'                     , zeros(size(KPV,1), size(Rphi2D',2));
-    KPhiU, zeros(size(Rphi2D,1),size(KVP,2)), KPhiPhi;
-  ];
-  npphi = size(K,1)-size(MV,1);
-  M = [
-    MV                     ,zeros(size(MV,1),npphi);
-    zeros(npphi,size(MV,1)),zeros(npphi,npphi);
-  ];
 
-  KVV2 = KVV - KUPhi*(KPhiPhi \ KPhiU);
+
+  KPhiPhi = sparse(KPhiPhi);
+  KPhiU = sparse(KPhiU);
+  disp('chol')
+  [L,p] = chol(KPhiPhi);
+  disp('invert')
+  sol = L\(L'\KPhiU);
+  disp('invert2')
+  KVV2 = KVV - KUPhi*sol;
 
   M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
-
   M3 = MV - KVP*M2;
-  [vecs, gamma] = eig(KVV2, M3, 'vector');
-  res = zeros(size(gamma));
 
+  disp('done invert')
+
+
+  disp('eigen')
+  [vecs, gamma] = eig(KVV2, M3, 'vector');
+
+  % M4 = KVV2\M3;
+  % [vecs, gamma] = eig(M4, 'vector');
+  % gamma = 1./gamma;
+  disp('done eigen')
+
+
+  res = zeros(size(gamma));
   for i = 1:length(gamma)
       v = vecs(:,i);
       r = KVV2*v - gamma(i)*M3*v;
       res(i) = norm(r) / ...
           (norm(KVV2*v) + norm(M3*v) + eps);
   end
-
   good = res < 1e-8;
 
   gamma = gamma(good);
   vecs  = vecs(:,good);
   res   = res(good);
-  % gamma
 
   [re_sorted, idx] = sort(real(gamma), 'descend');
   disp(gamma(idx(1:min(5,end))))

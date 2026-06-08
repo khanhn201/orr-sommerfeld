@@ -1,4 +1,5 @@
-load("modeII_wall.mat")
+load("modeII_wall40.mat")
+[Ah,Bh,Ch,Dh,z,w] = semhat(N);
 
 U = reshape(uvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
@@ -34,12 +35,6 @@ el_center = (el_pos(2:end) + el_pos(1:end-1))/2.0;
 
 nelz = 1;
 z_length = 10;
-uf = [];
-vf = [];
-wf = [];
-phif = [];
-% wBasef = [];
-% phiBasef = [];
 data_r = zeros(nelxy*nelxy*nelz, Nf*Nf*Nf, 6); % xyzuvw
 data_i = zeros(nelxy*nelxy*nelz, Nf*Nf*Nf, 6); % xyzuvw
 data_base = zeros(nelxy*nelxy*nelz, Nf*Nf*Nf, 6); % xyzuvw

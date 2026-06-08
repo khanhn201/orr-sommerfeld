@@ -147,19 +147,23 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
   sol = L\(L'\KPhiU);
   disp('invert2')
   KVV2 = KVV - KUPhi*sol;
+  [KL,KU,KP] = lu(KVV2);
+  disp('lu')
 
-  M2 = (KPV*(KVV2\KVP)) \ (KPV*(KVV2\MV));
+  KVP2 = KU \ (KL \ (KP*KVP));
+  MV2 = KU \ (KL \ (KP*MV));
+  M2 = (KPV*KVP2) \ (KPV*MV2);
   M3 = MV - KVP*M2;
 
   disp('done invert')
 
 
   disp('eigen')
-  [vecs, gamma] = eig(KVV2, M3, 'vector');
-
+  % [vecs, gamma] = eig(KVV2, M3, 'vector');
   % M4 = KVV2\M3;
-  % [vecs, gamma] = eig(M4, 'vector');
-  % gamma = 1./gamma;
+  M4 = KU \ (KL \ (KP*M3));
+  [vecs, gamma] = eig(M4, 'vector');
+  gamma = 1./gamma;
   disp('done eigen')
 
 

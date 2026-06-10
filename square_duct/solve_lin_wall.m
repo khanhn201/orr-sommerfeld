@@ -93,10 +93,9 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
   ];
 
   % phi part
+  Kphiphi = zeros(n2*9,n2*9);
   for ey = 1:Nely
   for ex = 1:Nelx
-      Ih = speye(N+1);
-
       sigmal = sigma;
       if ey != 2 || ex != 2
          sigmal = sigma_w;
@@ -107,12 +106,12 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
       Ahy = Ah;
 
       if ex != 2
-         Bhx = Bhx*W;
-         Ahx = Ahx/W;
+         Bhx = Bhx*W/2.0;
+         Ahx = Ahx/W*2.0;
       end
       if ey != 2
-         Bhy = Bhy*W;
-         Ahy = Ahy/W;
+         Bhy = Bhy*W/2.0;
+         Ahy = Ahy/W*2.0;
       end
 
       Ax = kron(Bhy,Ahx);
@@ -170,9 +169,11 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
   res = zeros(size(gamma));
   for i = 1:length(gamma)
       v = vecs(:,i);
-      r = KVV2*v - gamma(i)*M3*v;
+      kvprod = KVV2*v;
+      mvprod = M3*v;
+      r = kvprod - gamma(i)*mvprod;
       res(i) = norm(r) / ...
-          (norm(KVV2*v) + norm(M3*v) + eps);
+          (norm(kvprod) + norm(mvprod) + eps);
   end
   good = res < 1e-8;
 

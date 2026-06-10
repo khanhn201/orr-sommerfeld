@@ -27,11 +27,9 @@ function [uvec,phivec,f] = solve_steady_wall(N, mu, sigma, sigma_w, W, By)
 
 
   % phi part
+  Kphiphi = zeros(n2*9,n2*9);
   for ey = 1:Nely
   for ex = 1:Nelx
-      Ih = speye(N+1);
-      R = Ih(2:end-1,:);
-
       sigmal = sigma;
       if ey != 2 || ex != 2
          sigmal = sigma_w;
@@ -42,12 +40,12 @@ function [uvec,phivec,f] = solve_steady_wall(N, mu, sigma, sigma_w, W, By)
       Ahy = Ah;
 
       if ex != 2
-         Bhx = Bhx*W;
-         Ahx = Ahx/W;
+         Bhx = Bhx*W/2.0;
+         Ahx = Ahx/W*2.0;
       end
       if ey != 2
-         Bhy = Bhy*W;
-         Ahy = Ahy/W;
+         Bhy = Bhy*W/2.0;
+         Ahy = Ahy/W*2.0;
       end
 
       Ax = kron(Bhy,Ahx);
@@ -78,9 +76,16 @@ function [uvec,phivec,f] = solve_steady_wall(N, mu, sigma, sigma_w, W, By)
   ];
 
   K = sparse(K);
-  K_shift = max(sum(abs(K),2)./diag(K))-2;
-  L = ichol(K,struct('michol','on','diagcomp',K_shift));
-  [sol, flag, relres, iter] = pcg(K, rhs, 1e-8, 2000,L,L');
+
+  setup.type = 'ilutp';
+  setup.droptol = 1e-6;
+  [L,U] = ilu(K,setup);
+  restart = 50;
+  tol     = 1e-8;
+  maxit   = 2000;
+  [sol,flag,relres,iter,resvec] = gmres( ...
+      K, rhs, restart, tol, maxit, L, U);
+
   iter
   relres
 

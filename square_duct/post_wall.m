@@ -1,4 +1,5 @@
-load("modeII_wall40.mat")
+output_precision(9);
+load("modeII_wall35.mat")
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 
 U = reshape(uvec,N+1,N+1);
@@ -24,8 +25,13 @@ surf(x,y,abs(P));
 title('p');
 plot_phi_3b3(N, phivec, W)
 
-Nf = 10; % lx1
+Nf = 12; % lx1
 el_pos = [-1.0, -0.95, -0.9, -0.5, -0.25, 0.0, 0.25, 0.5, 0.9, 0.95, 1.0];
+mid = (el_pos(1:end-1) + el_pos(2:end))/2;
+out = zeros(1, 2*numel(el_pos)-1);
+out(1:2:end) = el_pos;
+out(2:2:end) = mid;
+el_pos = out;
 
 nelxy = length(el_pos) - 1;
 [zff,wf] = zwgll(Nf-1);

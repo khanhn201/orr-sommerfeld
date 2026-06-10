@@ -1,25 +1,25 @@
 % Flow in z-dir
 % Magnetic field in x-dir
 
-clear all; close all;
-output_precision(9);
+% clear all; close all;
+% output_precision(9);
 set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
 
-N = 30;
+N = 40;
 
-Re = 8e3;
-Ha = 15;
-c = 1;
+Re = 7e4;
+Ha = 10;
+c = 0.1;
 W = 0.1;
 
 alpha = 1.0; % Wave number in z
 
 rho = 1;
 mu = 1/Re;
-sigma = Ha^2/Re;
-sigma_w = c*sigma/W;
+sigma = Ha^2/Re
+sigma_w = c*sigma/W
 By = 1;
 
 

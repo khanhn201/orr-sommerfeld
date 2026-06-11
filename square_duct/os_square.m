@@ -7,11 +7,11 @@ set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
 
-N = 40;
+N = 30;
 
-Re = 7e4;
-Ha = 10;
-c = 0.1;
+Re = 1e4;
+Ha = 15;
+c = 1.0;
 W = 0.1;
 
 alpha = 1.0; % Wave number in z

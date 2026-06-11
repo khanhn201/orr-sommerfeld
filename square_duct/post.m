@@ -3,28 +3,28 @@ load("modeII.mat")
 U = reshape(uvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;
-surf(x,y,abs(U));
+surf(x,y,real(U));
 title('u');
 U = reshape(vvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;
-surf(x,y,abs(U));
+surf(x,y,real(U));
 title('v');
 U = reshape(wvec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;
-surf(x,y,abs(U));
+surf(x,y,real(U));
 title('w');
 P = reshape(pvec,N-1,N-1);
 [zd,wd]=zwgl(N-1);
 [y,x] = meshgrid(zd,zd);
 figure;
-surf(x,y,abs(P));
+surf(x,y,real(P));
 title('p');
 Phi = reshape(phivec,N+1,N+1);
 [y,x] = meshgrid(z,z);
 figure;
-surf(x,y,abs(Phi));
+surf(x,y,real(Phi));
 title('phi');
 
 Nf = 10; % lx1

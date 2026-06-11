@@ -116,11 +116,12 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma, 
 
       Ax = kron(Bhy,Ahx);
       Ay = kron(Ahy,Bhx);
+      Bxy = kron(Bhy,Bhx);
 
       e = (ey-1)*Nelx + ex;
       idx_start = (e-1)*n2+1;
       idx_end = e*n2;
-      Kphiphi(idx_start:idx_end,idx_start:idx_end) = sigmal*(Ax+Ay) + sigmal*alpha^2*B2D;
+      Kphiphi(idx_start:idx_end,idx_start:idx_end) = sigmal*(Ax+Ay) + sigmal*alpha^2*Bxy;
   end
   end
 

@@ -50,7 +50,7 @@ function [uvec,phivec,f] = solve_steady_wall(N, mu, sigma, sigma_w, W, By)
 
       Ax = kron(Bhy,Ahx);
       Ay = kron(Ahy,Bhx);
-
+      BB = kron(Bhy,Bhx);
       e = (ey-1)*Nelx + ex;
       idx_start = (e-1)*n2+1;
       idx_end = e*n2;

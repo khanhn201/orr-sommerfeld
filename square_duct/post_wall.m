@@ -1,32 +1,37 @@
 output_precision(9);
-load("modeII_wall35.mat")
+load("results_wall.mat")
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 
-U = reshape(uvec,N+1,N+1);
-[y,x] = meshgrid(z,z);
-figure;
-surf(x,y,abs(U));
-title('u');
-U = reshape(vvec,N+1,N+1);
-[y,x] = meshgrid(z,z);
-figure;
-surf(x,y,abs(U));
-title('v');
-U = reshape(wvec,N+1,N+1);
-[y,x] = meshgrid(z,z);
-figure;
-surf(x,y,abs(U));
-title('w');
-P = reshape(pvec,N-1,N-1);
-[zd,wd]=zwgl(N-1);
-[y,x] = meshgrid(zd,zd);
-figure;
-surf(x,y,abs(P));
-title('p');
+% U = reshape(uvec,N+1,N+1);
+% [y,x] = meshgrid(z,z);
+% figure;
+% surf(x,y,real(U));
+% title('u');
+% U = reshape(vvec,N+1,N+1);
+% [y,x] = meshgrid(z,z);
+% figure;
+% surf(x,y,real(U));
+% title('v');
+% U = reshape(wvec,N+1,N+1);
+% [y,x] = meshgrid(z,z);
+% figure;
+% surf(x,y,real(U));
+% title('w');
+% P = reshape(pvec,N-1,N-1);
+% [zd,wd]=zwgl(N-1);
+% [y,x] = meshgrid(zd,zd);
+% figure;
+% surf(x,y,real(P));
+% title('p');
 plot_phi_3b3(N, phivec, W)
 
-Nf = 12; % lx1
+Nf = 8; % lx1
 el_pos = [-1.0, -0.95, -0.9, -0.5, -0.25, 0.0, 0.25, 0.5, 0.9, 0.95, 1.0];
+mid = (el_pos(1:end-1) + el_pos(2:end))/2;
+out = zeros(1, 2*numel(el_pos)-1);
+out(1:2:end) = el_pos;
+out(2:2:end) = mid;
+el_pos = out;
 mid = (el_pos(1:end-1) + el_pos(2:end))/2;
 out = zeros(1, 2*numel(el_pos)-1);
 out(1:2:end) = el_pos;

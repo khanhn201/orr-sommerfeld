@@ -1,12 +1,12 @@
 output_precision(9);
-load("results_wall.mat")
+load("c1_N40.mat")
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 
-% U = reshape(uvec,N+1,N+1);
-% [y,x] = meshgrid(z,z);
-% figure;
-% surf(x,y,real(U));
-% title('u');
+U = reshape(uvec,N+1,N+1);
+[y,x] = meshgrid(z,z);
+figure;
+surf(x,y,real(U));
+title('u');
 % U = reshape(vvec,N+1,N+1);
 % [y,x] = meshgrid(z,z);
 % figure;

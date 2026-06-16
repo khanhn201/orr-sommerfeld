@@ -1,13 +1,13 @@
-function plot_vmesh_multi(N, meshVel, meshWall, u)
-[z,~]=zwgll(N);
+function plot_pmesh_multi(N, meshVel, meshWall, u)
+[z,~]=zwgl(N-1);
 NelxV = length(meshVel)-1;
 NelyV = length(meshVel)-1;
-nxV = NelxV*N + 1;
-nyV = NelyV*N + 1;
+nxV = NelxV*(N-2) + 1;
+nyV = NelyV*(N-2) + 1;
 U = zeros(nyV,nxV);
 X = zeros(nyV,nxV);
 Y = zeros(nyV,nxV);
-n = N+1;
+n = N-1;
 n2 = n^2;
 figure; hold on;
 for ey = 1:NelyV

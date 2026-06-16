@@ -1,6 +1,6 @@
 function plot_phimesh_multi(N, meshVel, meshWall, u)
 meshPhi  = [-meshWall(end:-1:1), meshVel(2:end-1), meshWall];
-[~,~,~,~,z,~] = semhat(N);
+[z,~]=zwgll(N);
 Nelx = length(meshPhi)-1;
 Nely = length(meshPhi)-1;
 nx = Nelx*N + 1;

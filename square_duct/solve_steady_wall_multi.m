@@ -84,19 +84,20 @@ function [uvec,phivec,f] = solve_steady_wall_multi(N, meshVel, meshWall, mu, sig
 
   K = sparse(K);
 
+  sol = K\rhsAll;
   % L = ichol(K);
   % [sol, flag, relres, iter] = pcg(K, rhsAll, 1e-8, 1000, L, L');
-  setup.type = 'ilutp';
-  setup.droptol = 1e-6;
-  [L,U] = ilu(K,setup);
-  restart = 50;
-  tol     = 1e-8;
-  maxit   = 2000;
-  [sol,flag,relres,iter,resvec] = gmres( ...
-      K, rhsAll, restart, tol, maxit, L, U);
+  % setup.type = 'ilutp';
+  % setup.droptol = 1e-6;
+  % [L,U] = ilu(K,setup);
+  % restart = 50;
+  % tol     = 1e-8;
+  % maxit   = 2000;
+  % [sol,flag,relres,iter,resvec] = gmres( ...
+  %     K, rhsAll, restart, tol, maxit, L, U);
 
-  iter
-  relres
+  % iter
+  % relres
 
   uvec   = QVel*RVel'*sol(1:size(RVel,1));
   phivec = QPhi*RPhi'*sol(size(RVel,1)+1:end);

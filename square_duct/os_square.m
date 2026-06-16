@@ -7,7 +7,7 @@ set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
 
-N = 7;
+N = 20;
 
 Re = 3e4;
 Ha = 100;
@@ -35,8 +35,8 @@ By = 1;
 
 % meshVel  = [-1.0, -0.8, -0.4, 0.0,...
 %              0.4, 0.8, 1.0];
-% meshVel  = [-1.0, -0.5, 0.0, 0.5,1.0];
-meshVel  = [-1.0, -0.8, -0.4, 0.0, 0.4, 0.8, 1.0];
+meshVel  = [-1.0, -0.5, 0.0, 0.5, 1.0];
+% meshVel  = [-1.0, 1.0];
 meshWall = [0.0, 1.0]*W + 1.0;
 
 
@@ -47,10 +47,10 @@ meshWall = [0.0, 1.0]*W + 1.0;
 % [uvec1,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall(N, rho, mu, sigma,sigma_w, W, U_base1, Phi_base, By, alpha);
 
 [U_base,Phi_base,f] = solve_steady_wall_multi(N, meshVel, meshWall, mu, sigma, sigma_w, W, By);
-[uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall_multi(N, meshVel, meshWall, rho, mu, sigma,sigma_w, W, U_base, Phi_base, By, alpha);
+% [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall_multi(N, meshVel, meshWall, rho, mu, sigma,sigma_w, W, U_base, Phi_base, By, alpha);
 
-f
-gamma
+% f
+% gamma
 plot_vmesh_multi(N, meshVel, meshWall, U_base)
 
 save("results_wall.mat")

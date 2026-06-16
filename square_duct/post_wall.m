@@ -1,5 +1,5 @@
 output_precision(9);
-load("c1_N40.mat")
+load("ha100n40.mat")
 [Ah,Bh,Ch,Dh,z,w] = semhat(N);
 
 U = reshape(uvec,N+1,N+1);

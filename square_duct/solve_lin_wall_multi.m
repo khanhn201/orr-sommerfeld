@@ -10,29 +10,35 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall_multi(N, meshVel, m
   NelV     = NelxV*NelyV;
   NelP     = NelxP*NelyP;
 
-  [Ah,Bh,_,Dh,z,_] = semhat(N);
+  [Ah,Bh,~,Dh,z,~] = semhat(N);
   n = N + 1;
   n2 = n^2;
   Ih = speye(n); 
 
-  [QVel, _] = set_tp_semq(NelxV,NelyV,N);
-  [QPhi, _] = set_tp_semq(NelxP,NelyP,N);
-  [QPr , _] = set_tp_semq(NelxV,NelyV,N-2);
+  [QVel, ~] = set_tp_semq(NelxV,NelyV,N);
+  [QPhi, ~] = set_tp_semq(NelxP,NelyP,N);
+  [QPr , ~] = set_tp_semq(NelxV,NelyV,N-2);
 
   IhGlo = speye(n*NelyV - (NelyV-1));
   R = IhGlo(2:end-1,:);
   RVel = kron(R, R);           % zero dirichlet for velocity
   RPhi = speye(size(QPhi,2));  % zero neumann   for phi
 
+  [zd,wd]=zwgll(ceil(3*N/2)); Bhd=diag(wd); % For dealiasing
+  JD    = interp_mat(zd,z);
+  JDXY  = kron(JD ,JD );
+  Ihd   = speye(size(zd,1));
+  Dhd   = deriv_mat(zd);
 
-  [zd,wd]=zwgl(N-1); Bhd=diag(wd); % For pressure
+
+
+  [zp,wp]=zwgl(N-1); Bhp=diag(wp); % For pressure
   np2 = (n-2)^2;
-  JM  = interp_mat(zd,z);
-  JMT = interp_mat(z,zd);
-  JM2D  = kron(JM ,JM );
-  JMT2D = kron(JMT,JMT);
-  Ihp = speye(size(zd,1));
-  Dph = deriv_mat(zd);
+  JP    = interp_mat(zp,z);
+  JPT   = interp_mat(z,zp);
+  JPXY  = kron(JP ,JP );
+  JPTXY = kron(JPT,JPT);
+  Ihp   = speye(size(zp,1));
 
 
   Kuu     = zeros(n2*NelV,n2*NelV);
@@ -64,24 +70,27 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall_multi(N, meshVel, m
       inFluid = ...
           ex > NelWall && ex <= NelxP-NelWall && ...
           ey > NelWall && ey <= NelyP-NelWall;
-
       sigmal = sigma;
       if ~inFluid
          sigmal = sigma_w;
       end
-
       hx = meshPhi(ex+1) - meshPhi(ex);
       hy = meshPhi(ey+1) - meshPhi(ey);
       
-      Bhx  = Bh *(hx/2); Bhy  = Bh *(hy/2);
       Ahx  = Ah /(hx/2); Ahy  = Ah /(hy/2);
+      Bhx  = Bh *(hx/2); Bhy  = Bh *(hy/2);
+      Bhpx = Bhp*(hx/2); Bhpy = Bhp*(hy/2);
       Bhdx = Bhd*(hx/2); Bhdy = Bhd*(hy/2);
       
       AhXY  = kron(Bhy,Ahx) + kron(Ahy,Bhx);
       BhXY  = kron(Bhy,Bhx);
+      BhpXY = kron(Bhpy,Bhpx);
       BhdXY = kron(Bhdy,Bhdx);
-      DhX   = kron(Ih ,Dh )/(hx/2);
-      DhY   = kron(Dh ,Ih )/(hy/2);
+
+      DhX  = kron(Ih ,Dh )/(hx/2);
+      DhY  = kron(Dh ,Ih )/(hy/2);
+      DhdX = kron(Ihd,Dhd)/(hx/2);
+      DhdY = kron(Dhd,Ihd)/(hy/2);
 
       eP   = (ey-1)*NelxP + ex;
       idxP = (eP-1)*n2 + (1:n2);
@@ -93,36 +102,36 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall_multi(N, meshVel, m
           idxV  = (eV-1)*n2 + (1:n2);
           idxPr = (eV-1)*np2 + (1:np2);
 
-          Kuu(idxV,idxV) = mu*AhXY + sigma*By^2*BhXY...
-                           + 1i*alpha*rho*BhXY*diag(U(idxV))...
-                           + mu*alpha^2*BhXY;
-          Kvv(idxV,idxV) = mu*AhXY...
-                           + 1i*alpha*rho*BhXY*diag(U(idxV))...
-                           + mu*alpha^2*BhXY;
-          Kww(idxV,idxV) = mu*AhXY + sigma*By^2*BhXY...
-                           + 1i*alpha*rho*BhXY*diag(U(idxV))...
-                           + mu*alpha^2*BhXY;
+          Uel = JDXY*U(idxV); % Interp mean flow to dealias
+          Kuu(idxV,idxV) = mu*AhXY + mu*alpha^2*BhXY...
+                           + 1i*alpha*rho*JDXY'*BhdXY*diag(     Uel)*JDXY... % dealias
+                           + sigma*By^2*BhXY;
+          Kvv(idxV,idxV) = mu*AhXY + mu*alpha^2*BhXY...
+                           + 1i*alpha*rho*JDXY'*BhdXY*diag(     Uel)*JDXY;   % dealias
+          Kww(idxV,idxV) = mu*AhXY + mu*alpha^2*BhXY...
+                           + 1i*alpha*rho*JDXY'*BhdXY*diag(     Uel)*JDXY... % dealias
+                           + sigma*By^2*BhXY;
 
-          Kwu(idxV,idxV) = rho*BhXY*diag(DhX*U(idxV));
-          Kwv(idxV,idxV) = rho*BhXY*diag(DhY*U(idxV));
-                           
-
-          Kuphi(idxV,idxP) = -1i*alpha*sigma*By*BhXY;
-          Kvphi(idxV,idxP) = 0*BhXY;
-          Kwphi(idxV,idxP) = -sigma*By*DhX'*BhXY; % Weak form
-
-          Kphiu(idxP,idxV) = 1i*alpha*sigma*By*BhXY;
-          Kphiv(idxP,idxV) = 0*BhXY;
-          Kphiw(idxP,idxV) = -sigma*By*BhXY*DhX;
+          Kwu(idxV,idxV) =            rho*JDXY'*BhdXY*diag(DhdX*Uel)*JDXY;
+          Kwv(idxV,idxV) =            rho*JDXY'*BhdXY*diag(DhdY*Uel)*JDXY;
 
 
-          Kup(idxV,idxPr) =     -DhX'*BhXY*JMT2D; % Weak form
-          Kvp(idxV,idxPr) =     -DhY'*BhXY*JMT2D; % Weak form
-          Kwp(idxV,idxPr) =  1i*alpha*BhXY*JMT2D;
+          Kuphi(idxV,idxP) = -1i*alpha*sigma*By     *BhXY;
+          Kvphi(idxV,idxP) =                       0*BhXY;
+          Kwphi(idxV,idxP) =          -sigma*By*DhX'*BhXY; % Weak form
 
-          Kpu(idxPr,idxV) =          -BhdXY*JM2D*DhX;
-          Kpv(idxPr,idxV) =          -BhdXY*JM2D*DhY;
-          Kpw(idxPr,idxV) = -1i*alpha*BhdXY*JM2D;
+          Kphiu(idxP,idxV) =  1i*alpha*sigma*By     *BhXY;
+          Kphiv(idxP,idxV) =                       0*BhXY;
+          Kphiw(idxP,idxV) =          -sigma*By     *BhXY*DhX;
+
+
+          Kup(idxV,idxPr) =     -DhX'*BhXY*JPTXY; % Weak form
+          Kvp(idxV,idxPr) =     -DhY'*BhXY*JPTXY; % Weak form
+          Kwp(idxV,idxPr) =  1i*alpha*BhXY*JPTXY;
+
+          Kpu(idxPr,idxV) =          -BhpXY*JPXY*DhX;
+          Kpv(idxPr,idxV) =          -BhpXY*JPXY*DhY;
+          Kpw(idxPr,idxV) = -1i*alpha*BhpXY*JPXY;
 
           Mu(idxV,1) = -rho*diag(BhXY);
           Mv(idxV,1) = -rho*diag(BhXY);
@@ -180,16 +189,18 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall_multi(N, meshVel, m
   M3 = MV - KVelPr*M2;
   % M4 = KU \ (KL \ (KP*M3));
   M4 = MV2 - KVP2*M2;
+
   disp('eigen')
-  [vecs, gamma] = eig(M4, 'vector');
+  [vecs, gamma] = eig(M4);
+  % [vecs, gamma] = eigs(M3, KVV2, 1000);
+  gamma = diag(gamma);
   gamma = 1./gamma;
   disp('done eigen')
 
 
-
   KV = KVV2 * vecs;
   MV = M3   * vecs;
-  R = KV - MV .* gamma.';
+  R = KV - MV * diag(gamma);
   res = vecnorm(R) ./ (vecnorm(KV) + vecnorm(MV) + eps);
 
   good = res < 1e-8;

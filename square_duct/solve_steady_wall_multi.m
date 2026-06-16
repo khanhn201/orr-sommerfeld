@@ -10,13 +10,13 @@ function [uvec,phivec,f] = solve_steady_wall_multi(N, meshVel, meshWall, mu, sig
   NelV     = NelxV*NelyV;
   NelP     = NelxP*NelyP;
 
-  [Ah,Bh,_,Dh,_,_] = semhat(N);
+  [Ah,Bh,~,Dh,~,~] = semhat(N);
   n = N + 1;
   n2 = n^2;
   Ih = speye(n); 
 
-  [QVel, _] = set_tp_semq(NelxV,NelyV,N);
-  [QPhi, _] = set_tp_semq(NelxP,NelyP,N);
+  [QVel, ~] = set_tp_semq(NelxV,NelyV,N);
+  [QPhi, ~] = set_tp_semq(NelxP,NelyP,N);
 
   IhGlo = speye(n*NelyV - (NelyV-1));
   R = IhGlo(2:end-1,:);
@@ -63,7 +63,7 @@ function [uvec,phivec,f] = solve_steady_wall_multi(N, meshVel, meshWall, mu, sig
           idxV = (eV-1)*n2 + (1:n2);
 
           Kuu  (idxV,idxV) = mu*AhXY + sigma*By^2*BhXY;
-          Kuphi(idxV,idxP) =  -sigma*By*DhX'*BhXY; % Weak form
+          Kuphi(idxV,idxP) = -sigma*By*DhX'*BhXY; % Weak form
 
           Kphiu(idxP,idxV) = -sigma*By*BhXY*DhX;
           rhs  (idxV,1)    = BhXY*ones(n2  , 1);

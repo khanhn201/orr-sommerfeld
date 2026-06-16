@@ -7,7 +7,7 @@ set(0, "defaultAxesFontSize", 24)
 set(0, "defaultTextFontSize", 24)
 set(0, "defaultLineLineWidth", 2)
 
-N = 10;
+N = 20;
 
 Re = 3e4;
 Ha = 100;
@@ -35,7 +35,8 @@ By = 1;
 
 % meshVel  = [-1.0, -0.8, -0.4, 0.0,...
 %              0.4, 0.8, 1.0];
-meshVel  = [-1.0, -0.5, 0.0, 0.5,1.0];
+% meshVel  = [-1.0, -0.5, 0.0, 0.5,1.0];
+meshVel  = [-1.0, 0.0, 1.0];
 meshWall = [0.0, 1.0]*W + 1.0;
 
 

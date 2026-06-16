@@ -1,5 +1,5 @@
 output_precision(9);
-load("ha100n15.mat")
+load("ha100n7.mat")
 
 [~,~,~,~,z,~] = semhat(N);
 

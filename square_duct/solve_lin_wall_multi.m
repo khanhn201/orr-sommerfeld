@@ -18,6 +18,7 @@ function [uvec,vvec,wvec,pvec,phivec,gamma] = solve_lin_wall_multi(N, meshVel, m
   [QVel, ~] = set_tp_semq(NelxV,NelyV,N);
   [QPhi, ~] = set_tp_semq(NelxP,NelyP,N);
   [QPr , ~] = set_tp_semq(NelxV,NelyV,N-2);
+  QPr = speye(size(QPr,1));
 
   IhGlo = speye(n*NelyV - (NelyV-1));
   R = IhGlo(2:end-1,:);
